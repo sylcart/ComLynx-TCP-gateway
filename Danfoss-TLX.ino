@@ -188,15 +188,27 @@ void GetNPrintAll()
 
     // Often seen errors like 4294967296.00 mA on DC current
     // That is because it does not handle negative data 
-    long DC = GetInvData(GetGridDC1);
-    if (DC > 0x1000)DC=DC-0x100000000;
-    Serial.println("Grid DC Current L1          :" + String(DC) + " mA");
+    int64_t DC = GetInvData(GetGridDC1);   
+    int64_t CNV = 0x100000000;  
+    if (DC > 0x1000){
+      Serial.println("Grid DC Current L1 ERR      :" + String(long(DC)) + " mA");
+      DC -= CNV;
+    }
+    Serial.println("Grid DC Current L1          :" + String(long(DC)) + " mA");
+    
     DC = GetInvData(GetGridDC2);
-    if (DC > 0x1000)DC=DC-0x100000000;
-    Serial.println("Grid DC Current L2          :" + String(DC) + " mA");
+    if (DC > 0x1000){
+      Serial.println("Grid DC Current L2 ERR      :" + String(long(DC)) + " mA");
+      DC -= CNV;
+    }
+    Serial.println("Grid DC Current L2          :" + String(long(DC)) + " mA");
+    
     DC = GetInvData(GetGridDC3);
-    if (DC > 0x1000)DC=DC-0x100000000;
-    Serial.println("Grid DC Current L3          :" + String(DC) + " mA");
+    if (DC > 0x1000){
+      Serial.println("Grid DC Current L3 ERR      :" + String(long(DC)) + " mA");
+      DC -= CNV;
+    }
+    Serial.println("Grid DC Current L3          :" + String((long)DC) + " mA");
     
  /*  Working but not currently of interest 
     Serial.println("Production 1 years ago      :" + String(GetInvData(GetProdL1year) / 1000) + " KWh");
