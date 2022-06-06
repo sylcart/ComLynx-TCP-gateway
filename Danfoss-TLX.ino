@@ -87,6 +87,10 @@ String GetGridDC3   = "024E";
 String GetGridV1    = "023C"; // Grid voltage, phase L1 [V/10]
 String GetGridV2    = "023D";
 String GetGridV3    = "023E";
+String GetGridV1Avg = "025B"; // Grid voltage, 10-min. mean, phase L1 [V/10]
+String GetGridV2Avg = "025C";
+String GetGridV3Avg = "025D";
+
 String GetGridA1    = "023F"; // Grid current, phase L1 [mA]
 String GetGridA2    = "0240";
 String GetGridA3    = "0241";
@@ -139,12 +143,13 @@ byte DataAsc[100];
 
 void GetNPrintAll()
 {
+    Serial.println("-- ");
     Serial.println("Total Energy Production     :" + String(GetInvData(GetTotalE) / 1000) + " KWh");
     Serial.println("Production this year        :" + String(GetInvData(GetProdTyear) / 1000) + " KWh");
     //Serial.println("Production this month       :" + String(GetInvData(GetProdTmonth) / 1000) + " KWh");
     //Serial.println("Production this week        :" + String(GetInvData(GetProdTweek) / 1000) + " KWh");
     Serial.println("Production this Day         :" + String(GetInvData(GetProdTday) / 1000) + " KWh");    
-    Serial.println("--");
+    
     Serial.println("Grid Energy L1 Day          :" + String(GetInvData(GetGridEL1day) / 1000) + " KWh");
     Serial.println("Grid Energy L2 Day          :" + String(GetInvData(GetGridEL2day) / 1000) + " KWh");  
     Serial.println("Grid Energy L3 Day          :" + String(GetInvData(GetGridEL3day) / 1000) + " KWh");
@@ -164,9 +169,15 @@ void GetNPrintAll()
     //Serial.println("Grid Frequency L2           :" + String(GetInvData(GetHZ2) / 1000) + " Hz");
     //Serial.println("Grid Frequency L3           :" + String(GetInvData(GetHZ3) / 1000) + " Hz");
     //Serial.println("Grid Frequency (avg)        :" + String(GetInvData(GetHZ) / 1000) + " Hz");    
+
+    // Avg voltage working
     Serial.println("Grid Voltage L1             :" + String(GetInvData(GetGridV1) / 10) + " V");
+    //Serial.println("Grid Voltage L1 (Avg)       :" + String(GetInvData(GetGridV1Avg) / 10) + " V");
     Serial.println("Grid Voltage L2             :" + String(GetInvData(GetGridV2) / 10) + " V");
+    //Serial.println("Grid Voltage L2 (Avg)       :" + String(GetInvData(GetGridV2Avg) / 10) + " V");
     Serial.println("Grid Voltage L3             :" + String(GetInvData(GetGridV3) / 10) + " V");
+    //Serial.println("Grid Voltage L3 (Avg)       :" + String(GetInvData(GetGridV3Avg) / 10) + " V");
+
     Serial.println("Grid Current L1             :" + String(GetInvData(GetGridA1) / 1000) + " A");
     Serial.println("Grid Current L2             :" + String(GetInvData(GetGridA2) / 1000) + " A");
     Serial.println("Grid Current L3             :" + String(GetInvData(GetGridA3) / 1000) + " A");
@@ -175,9 +186,17 @@ void GetNPrintAll()
     Serial.println("Grid Power L3               :" + String(GetInvData(GetGridP3) / 1) + " W");
     Serial.println("Grid Power (L1+L2+L3)       :" + String(GetInvData(GetGridP) / 1 /*1000*/) + " W");
 
-    Serial.println("Grid DC Current L1          :" + String(GetInvData(GetGridDC1) / 1) + " mA");
-    Serial.println("Grid DC Current L2          :" + String(GetInvData(GetGridDC2) / 1) + " mA");
-    Serial.println("Grid DC Current L3          :" + String(GetInvData(GetGridDC3) / 1) + " mA");
+    // Often seen errors like 4294967296.00 mA on DC current
+    // That is because it does not handle negative data 
+    long DC = GetInvData(GetGridDC1);
+    if (DC > 0x1000)DC=DC-0x100000000;
+    Serial.println("Grid DC Current L1          :" + String(DC) + " mA");
+    DC = GetInvData(GetGridDC2);
+    if (DC > 0x1000)DC=DC-0x100000000;
+    Serial.println("Grid DC Current L2          :" + String(DC) + " mA");
+    DC = GetInvData(GetGridDC3);
+    if (DC > 0x1000)DC=DC-0x100000000;
+    Serial.println("Grid DC Current L3          :" + String(DC) + " mA");
     
  /*  Working but not currently of interest 
     Serial.println("Production 1 years ago      :" + String(GetInvData(GetProdL1year) / 1000) + " KWh");
@@ -234,7 +253,7 @@ void setup()
 
 void loop()
 {
-    delay(60000);
+    delay(30000);
     GetNPrintAll();    
 }
 
@@ -252,20 +271,20 @@ String RX_TLX() {
     String RXData = "";
     unsigned long TimeNow = millis();
 
-    delay(25); //\\ 25 was not enough. typical delay 28-31ms. So wait for RX_LENGTH;
+    delay(15); //\\ 25 was not enough. typical delay 28-31ms. So wait for RX_LENGTH;
     while(Serial2.available() < RX_LENGTH){
       delay(1);
       if(millis() - TimeNow >RX_TIMEOUT)break;
     }
-    //\\Serial.println("RX time                     :" + String(millis()-TimeNow) + " ms" );   
-
-    
+    delay(5);
+    // Serial.print("RX time :" + String(millis()-TimeNow) + " ms " );   
+     
     while (Serial2.available() > 0) {
       RxBuffer = String(Serial2.read(), HEX);
       if (RxBuffer.length() == 1)  RxBuffer = "0" + RxBuffer;
       RXData = RXData + RxBuffer;
     }
-    //\\Serial.println("RX Length                   :" + String(RxBuffer.length() ));   
+    // Serial.print(" Length :" + String(RxBuffer.length() ) + " ");   
     RXData.toUpperCase();
     RXData.replace("7D5E", "7E");
     RXData.replace("7D5D", "7D");
