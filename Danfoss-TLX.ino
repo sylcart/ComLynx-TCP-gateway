@@ -72,9 +72,9 @@ String GetPvV3      = "022A";
 String GetPvA1      = "022D"; // PV Current, input 1 [mA]
 String GetPvA2      = "022E";
 String GetPvA3      = "022F";
-String GetPvP1      = "0232"; // PV Power, input 1 [W] //\\TLX Pro+ 6kW does not return these
-String GetPvP2      = "0233";
-String GetPvP3      = "0234";
+//String GetPvP1      = "0232"; // PV Power, input 1 [W] //\\TLX Pro+ 6kW does not return these
+//String GetPvP2      = "0233";
+//String GetPvP3      = "0234";
 
 String GetHZ1       = "0261"; // Grid frequency, phase L1 [mHz]v
 String GetHZ2       = "0262";
@@ -96,11 +96,16 @@ String GetGridP3    = "0244";
 String GetGridP     = "0246"; // Grid power, sum of L1, L2 and L3 [W]
 
 String GetTotalE    = "0102"; // Total Energy Production [Wh]
-String GetProdTyear = "7832";
-//String GetProdTdaY="0104";  // Energy Production Today [Wh] 0x01 0x04 does note return it on TLX/DLX - ULX Only
-String GetProdTday  = "780A";
-String GetTotalEDay = "024A"; // Grid Energy Today, sum of L1, L2 and L3 [Wh]
+String GetProdTday  = "780A"; // Inverter production today [Wh]
+//String GetProdTweek = "780B"; // Inverter production this week [Wh] - not supported by TLX
+//String GetProdTmonth= "780C"; // Inverter production this month [Wh] - not supported by TLX
+String GetProdTyear = "7832"; // Inverter production this year [Wh]
 
+//String GetProdTdaY="0104";  // Energy Production Today [Wh] 0x01 0x04 does note return it on TLX/DLX - ULX Only
+String GetGridEL1day="0247"; // Grid Energy Today, phase L1 [Wh]
+String GetGridEL2day="0248"; // Grid Energy Today, phase L2 [Wh]
+String GetGridEL3day="0249"; // Grid Energy Today, phase L3 [Wh]
+String GetGridEday = "024A"; // Grid Energy Today, sum of L1, L2 and L3 [Wh]
 
 String GetProdL1year = "7833";
 String GetProdL2year = "7834";
@@ -110,6 +115,7 @@ String GetProdL5year = "7837";
 String GetProdL6year = "7838";
 String GetProdL7year = "7839";
 String GetProdL8year = "783A";
+// etc until "7846" for 20 years ago 
 
 String GetOpMode    = "0A02";  // Get operating mode
 
@@ -135,11 +141,14 @@ void GetNPrintAll()
 {
     Serial.println("Total Energy Production     :" + String(GetInvData(GetTotalE) / 1000) + " KWh");
     Serial.println("Production this year        :" + String(GetInvData(GetProdTyear) / 1000) + " KWh");
-    
-    //Serial.println("Total Production Day [0104] :" + String(GetInvData(GetProdTday0104)  / 1000) + " KWh");
-    Serial.println("Total Production Day [780A] :" + String(GetInvData(GetProdTday)  / 1000) + " KWh");
-    Serial.println("Total Production Day [024A] :" + String(GetInvData(GetTotalEDay) / 1000) + " KWh");
-  
+    //Serial.println("Production this month       :" + String(GetInvData(GetProdTmonth) / 1000) + " KWh");
+    //Serial.println("Production this week        :" + String(GetInvData(GetProdTweek) / 1000) + " KWh");
+    Serial.println("Production this Day         :" + String(GetInvData(GetProdTday) / 1000) + " KWh");    
+    Serial.println("--");
+    Serial.println("Grid Energy L1 Day          :" + String(GetInvData(GetGridEL1day) / 1000) + " KWh");
+    Serial.println("Grid Energy L2 Day          :" + String(GetInvData(GetGridEL2day) / 1000) + " KWh");  
+    Serial.println("Grid Energy L3 Day          :" + String(GetInvData(GetGridEL3day) / 1000) + " KWh");
+    Serial.println("Grid Energy Day             :" + String(GetInvData(GetGridEday) / 1000) + " KWh");
     Serial.println("PV Voltage input P1         :" + String(GetInvData(GetPvV1) / 10) + " V");
     Serial.println("PV Voltage input P2         :" + String(GetInvData(GetPvV2) / 10) + " V");
     Serial.println("PV Voltage input P3         :" + String(GetInvData(GetPvV3) / 10) + " V");
@@ -150,10 +159,11 @@ void GetNPrintAll()
     //Serial.println("PV Power input P2           :" + String(GetInvData(GetPvP2) / 1) + " W");
     //Serial.println("PV Power input P3           :" + String(GetInvData(GetPvP3) / 1) + " W");
     
-    Serial.println("Grid Frequency L1           :" + String(GetInvData(GetHZ1) / 1000) + " Hz");
-    Serial.println("Grid Frequency L2           :" + String(GetInvData(GetHZ2) / 1000) + " Hz");
-    Serial.println("Grid Frequency L3           :" + String(GetInvData(GetHZ3) / 1000) + " Hz");
-    Serial.println("Grid Frequency (avg)        :" + String(GetInvData(GetHZ) / 1000) + " Hz");    
+    //Frequency works
+    //Serial.println("Grid Frequency L1           :" + String(GetInvData(GetHZ1) / 1000) + " Hz");
+    //Serial.println("Grid Frequency L2           :" + String(GetInvData(GetHZ2) / 1000) + " Hz");
+    //Serial.println("Grid Frequency L3           :" + String(GetInvData(GetHZ3) / 1000) + " Hz");
+    //Serial.println("Grid Frequency (avg)        :" + String(GetInvData(GetHZ) / 1000) + " Hz");    
     Serial.println("Grid Voltage L1             :" + String(GetInvData(GetGridV1) / 10) + " V");
     Serial.println("Grid Voltage L2             :" + String(GetInvData(GetGridV2) / 10) + " V");
     Serial.println("Grid Voltage L3             :" + String(GetInvData(GetGridV3) / 10) + " V");
@@ -205,6 +215,7 @@ void GetNPrintAll()
       Serial.println("Operation mode              :" + String(TLX_modes_txt[TLXMode]) + String(mode) );   
     }else {
       Serial.println("Operation mode              :" + String("ERROR")+ String(mode) );
+      
     }
 }
 
@@ -235,14 +246,26 @@ float GetInvData(String GetLocal){
 }
 
 String RX_TLX() {
+    const int RX_TIMEOUT=50;
+    const int RX_LENGTH =2;
     String RxBuffer;
     String RXData = "";
-    delay(100); //\\ 25 was not enough. Need to measure how it takes to repons
-    while (Serial2.available() > 0) {
-        RxBuffer = String(Serial2.read(), HEX);
-        if (RxBuffer.length() == 1)  RxBuffer = "0" + RxBuffer;
-        RXData = RXData + RxBuffer;
+    unsigned long TimeNow = millis();
+
+    delay(25); //\\ 25 was not enough. typical delay 28-31ms. So wait for RX_LENGTH;
+    while(Serial2.available() < RX_LENGTH){
+      delay(1);
+      if(millis() - TimeNow >RX_TIMEOUT)break;
     }
+    //\\Serial.println("RX time                     :" + String(millis()-TimeNow) + " ms" );   
+
+    
+    while (Serial2.available() > 0) {
+      RxBuffer = String(Serial2.read(), HEX);
+      if (RxBuffer.length() == 1)  RxBuffer = "0" + RxBuffer;
+      RXData = RXData + RxBuffer;
+    }
+    //\\Serial.println("RX Length                   :" + String(RxBuffer.length() ));   
     RXData.toUpperCase();
     RXData.replace("7D5E", "7E");
     RXData.replace("7D5D", "7D");
@@ -251,10 +274,8 @@ String RX_TLX() {
 
 void FindInvAddr() {
     TX_TLX(GetAddr);
-    Serial.print("RS485_DstAddr");
-    Serial.println(RS485_DstAddr);
     RS485_DstAddr = RX_TLX().substring(6, 6 + 4);
-    Serial.print("RS485_DstAddr");
+    Serial.print("RS485_DstAddr :");
     Serial.println(RS485_DstAddr);
 }
 
