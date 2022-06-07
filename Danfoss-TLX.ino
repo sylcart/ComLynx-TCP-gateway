@@ -144,65 +144,65 @@ byte DataAsc[100];
 void GetNPrintAll()
 {
     Serial.println("-- ");
-    Serial.println("Total Energy Production     :" + String(GetInvData(GetTotalE) / 1000.0f) + " KWh");
-    Serial.println("Production this year        :" + String(GetInvData(GetProdTyear) / 1000.0f) + " KWh");
-    //Serial.println("Production this month       :" + String(GetInvData(GetProdTmonth) / 1000.0f) + " KWh");
-    //Serial.println("Production this week        :" + String(GetInvData(GetProdTweek) / 1000.0f) + " KWh");
-    Serial.println("Production this Day         :" + String(GetInvData(GetProdTday) / 1000.0f) + " KWh");    
+    Serial.println("Total Energy Production     :" + String(GetInvData(GetTotalE) / 1000.0f,3) + " KWh");
+    Serial.println("Production this year        :" + String(GetInvData(GetProdTyear) / 1000.0f,3) + " KWh");
+    //Serial.println("Production this month       :" + String(GetInvData(GetProdTmonth) / 1000.0f,3) + " KWh");
+    //Serial.println("Production this week        :" + String(GetInvData(GetProdTweek) / 1000.0f,3) + " KWh");
+    Serial.println("Production this Day         :" + String(GetInvData(GetProdTday) / 1000.0f,3) + " KWh");    
     
-    Serial.println("Grid Energy L1 Day          :" + String(GetInvData(GetGridEL1day) / 1000.0f) + " KWh");
-    Serial.println("Grid Energy L2 Day          :" + String(GetInvData(GetGridEL2day) / 1000.0f) + " KWh");  
-    Serial.println("Grid Energy L3 Day          :" + String(GetInvData(GetGridEL3day) / 1000.0f) + " KWh");
-    Serial.println("Grid Energy Day             :" + String(GetInvData(GetGridEday) / 1000.0f) + " KWh");
-    Serial.println("PV Voltage input P1         :" + String(GetInvData(GetPvV1) / 10.0f) + " V");
-    Serial.println("PV Voltage input P2         :" + String(GetInvData(GetPvV2) / 10.0f) + " V");
-    Serial.println("PV Voltage input P3         :" + String(GetInvData(GetPvV3) / 10.0f) + " V");
-    Serial.println("PV Current input P1         :" + String(GetInvData(GetPvA1) / 1000.0f) + " A");
-    Serial.println("PV Current input P2         :" + String(GetInvData(GetPvA2) / 1000.0f) + " A");
-    Serial.println("PV Current input P3         :" + String(GetInvData(GetPvA3) / 1000.0f) + " A");
-    //Serial.println("PV Power input P1           :" + String(GetInvData(GetPvP1) / 1.0f) + " W");
-    //Serial.println("PV Power input P2           :" + String(GetInvData(GetPvP2) / 1.0f) + " W");
-    //Serial.println("PV Power input P3           :" + String(GetInvData(GetPvP3) / 1.0f) + " W");
+    Serial.println("Grid Energy L1 Day          :" + String(GetInvData(GetGridEL1day) / 1000.0f,3) + " KWh");
+    Serial.println("Grid Energy L2 Day          :" + String(GetInvData(GetGridEL2day) / 1000.0f,3) + " KWh");  
+    Serial.println("Grid Energy L3 Day          :" + String(GetInvData(GetGridEL3day) / 1000.0f,3) + " KWh");
+    Serial.println("Grid Energy Day             :" + String(GetInvData(GetGridEday) / 1000.0f,3) + " KWh");
+    Serial.println("PV Voltage input P1         :" + String(GetInvData(GetPvV1) / 10.0f,1) + " V");
+    Serial.println("PV Voltage input P2         :" + String(GetInvData(GetPvV2) / 10.0f,1) + " V");
+    Serial.println("PV Voltage input P3         :" + String(GetInvData(GetPvV3) / 10.0f,1) + " V");
+    Serial.println("PV Current input P1         :" + String(GetInvData(GetPvA1) / 1000.0f,3) + " A");
+    Serial.println("PV Current input P2         :" + String(GetInvData(GetPvA2) / 1000.0f,3) + " A");
+    Serial.println("PV Current input P3         :" + String(GetInvData(GetPvA3) / 1000.0f,3) + " A");
+    //Serial.println("PV Power input P1           :" + String(GetInvData(GetPvP1) / 1.0f,0) + " W");
+    //Serial.println("PV Power input P2           :" + String(GetInvData(GetPvP2) / 1.0f,0) + " W");
+    //Serial.println("PV Power input P3           :" + String(GetInvData(GetPvP3) / 1.0f,0) + " W");
     
     //Frequency works
-    //Serial.println("Grid Frequency L1           :" + String(GetInvData(GetHZ1) / 1000.0f) + " Hz");
-    //Serial.println("Grid Frequency L2           :" + String(GetInvData(GetHZ2) / 1000.0f) + " Hz");
-    //Serial.println("Grid Frequency L3           :" + String(GetInvData(GetHZ3) / 1000.0f) + " Hz");
-    //Serial.println("Grid Frequency (avg)        :" + String(GetInvData(GetHZ) / 1000.0f) + " Hz");    
+    //Serial.println("Grid Frequency L1           :" + String(GetInvData(GetHZ1) / 1000.0f,3) + " Hz");
+    //Serial.println("Grid Frequency L2           :" + String(GetInvData(GetHZ2) / 1000.0f,3) + " Hz");
+    //Serial.println("Grid Frequency L3           :" + String(GetInvData(GetHZ3) / 1000.0f,3) + " Hz");
+    //Serial.println("Grid Frequency (avg)        :" + String(GetInvData(GetHZ) / 1000.0f,3) + " Hz");    
 
     // Avg voltage working
-    Serial.println("Grid Voltage L1             :" + String(GetInvData(GetGridV1) / 10.0f) + " V");
-    //Serial.println("Grid Voltage L1 (Avg)       :" + String(GetInvData(GetGridV1Avg) / 10.0f) + " V");
-    Serial.println("Grid Voltage L2             :" + String(GetInvData(GetGridV2) / 10.0f) + " V");
-    //Serial.println("Grid Voltage L2 (Avg)       :" + String(GetInvData(GetGridV2Avg) / 10.0f) + " V");
-    Serial.println("Grid Voltage L3             :" + String(GetInvData(GetGridV3) / 10.0f) + " V");
-    //Serial.println("Grid Voltage L3 (Avg)       :" + String(GetInvData(GetGridV3Avg) / 10.0f) + " V");
+    Serial.println("Grid Voltage L1             :" + String(GetInvData(GetGridV1) / 10.0f,1) + " V");
+    //Serial.println("Grid Voltage L1 (Avg)       :" + String(GetInvData(GetGridV1Avg) / 10.0f,1) + " V");
+    Serial.println("Grid Voltage L2             :" + String(GetInvData(GetGridV2) / 10.0f,1) + " V");
+    //Serial.println("Grid Voltage L2 (Avg)       :" + String(GetInvData(GetGridV2Avg) / 10.0f,1) + " V");
+    Serial.println("Grid Voltage L3             :" + String(GetInvData(GetGridV3) / 10.0f,1) + " V");
+    //Serial.println("Grid Voltage L3 (Avg)       :" + String(GetInvData(GetGridV3Avg) / 10.0f,1) + " V");
 
-    Serial.println("Grid Current L1             :" + String(GetInvData(GetGridA1) / 1000.0f) + " A");
-    Serial.println("Grid Current L2             :" + String(GetInvData(GetGridA2) / 1000.0f) + " A");
-    Serial.println("Grid Current L3             :" + String(GetInvData(GetGridA3) / 1000.0f) + " A");
-    Serial.println("Grid Power L1               :" + String(GetInvData(GetGridP1) / 1.0f) + " W");
-    Serial.println("Grid Power L2               :" + String(GetInvData(GetGridP2) / 1.0f) + " W");
-    Serial.println("Grid Power L3               :" + String(GetInvData(GetGridP3) / 1.0f) + " W");
-    Serial.println("Grid Power (L1+L2+L3)       :" + String(GetInvData(GetGridP) / 1.0f) + " W");
+    Serial.println("Grid Current L1             :" + String(GetInvData(GetGridA1) / 1000.0f,3) + " A");
+    Serial.println("Grid Current L2             :" + String(GetInvData(GetGridA2) / 1000.0f,3) + " A");
+    Serial.println("Grid Current L3             :" + String(GetInvData(GetGridA3) / 1000.0f,3) + " A");
+    Serial.println("Grid Power L1               :" + String(GetInvData(GetGridP1) / 1.0f,0) + " W");
+    Serial.println("Grid Power L2               :" + String(GetInvData(GetGridP2) / 1.0f,0) + " W");
+    Serial.println("Grid Power L3               :" + String(GetInvData(GetGridP3) / 1.0f,0) + " W");
+    Serial.println("Grid Power (L1+L2+L3)       :" + String(GetInvData(GetGridP) / 1.0f,0) + " W");
 
     Serial.println("Grid DC Current L1          :" + String(GetInvData(GetGridDC1)) + " mA");
     Serial.println("Grid DC Current L2          :" + String(GetInvData(GetGridDC2)) + " mA");
     Serial.println("Grid DC Current L3          :" + String(GetInvData(GetGridDC3)) + " mA");
       
  /*  Working but not currently of interest 
-    Serial.println("Production 1 years ago      :" + String(GetInvData(GetProdL1year) / 1000.0f) + " KWh");
-    Serial.println("Production 2 years ago      :" + String(GetInvData(GetProdL2year) / 1000.0f) + " KWh");
-    Serial.println("Production 3 years ago      :" + String(GetInvData(GetProdL3year) / 1000.0f) + " KWh");
-    Serial.println("Production 4 years ago      :" + String(GetInvData(GetProdL4year) / 1000.0f) + " KWh");
-    Serial.println("Production 5 years ago      :" + String(GetInvData(GetProdL5year) / 1000.0f) + " KWh");
-    Serial.println("Production 6 years ago      :" + String(GetInvData(GetProdL6year) / 1000.0f) + " KWh");
-    Serial.println("Production 7 years ago      :" + String(GetInvData(GetProdL7year) / 1000.0f) + " KWh");
-    Serial.println("Production 8 years ago      :" + String(GetInvData(GetProdL8year) / 1000.0f) + " KWh");
+    Serial.println("Production 1 years ago      :" + String(GetInvData(GetProdL1year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 2 years ago      :" + String(GetInvData(GetProdL2year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 3 years ago      :" + String(GetInvData(GetProdL3year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 4 years ago      :" + String(GetInvData(GetProdL4year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 5 years ago      :" + String(GetInvData(GetProdL5year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 6 years ago      :" + String(GetInvData(GetProdL6year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 7 years ago      :" + String(GetInvData(GetProdL7year) / 1000.0f,3) + " KWh");
+    Serial.println("Production 8 years ago      :" + String(GetInvData(GetProdL8year) / 1000.0f,3) + " KWh");
 */
     // No sensors connected
-    //Serial.println("Panel Temperature           :" + String(GetInvData(GetPvTemp) / 1.0f) + " C");
-    //Serial.println("Out Temperature             :" + String(GetInvData(GetOutTemp) / 1.0f) + " C");
+    //Serial.println("Panel Temperature           :" + String(GetInvData(GetPvTemp) / 1.0f,0) + " C");
+    //Serial.println("Out Temperature             :" + String(GetInvData(GetOutTemp) / 1.0f,0) + " C");
 
     int mode = GetInvData(GetOpMode);
     
