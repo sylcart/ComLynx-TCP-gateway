@@ -1,7 +1,7 @@
 # Danfoss-TLX
     RS485 Communication with Danfoss TLX solar inverter and REST server
 
-    I use it for Home Assistant intergration where each sensor can be read as sensors.
+    I use it for Home Assistant intergration where each parameter/value can be read as a sensor.
     See DanfossTLX-RS485.h for parameters
     sensor:
       # Danfoss TLX
