@@ -8,6 +8,10 @@
 
 DanfossTLX::DanfossTLX(const byte RXD, const byte TXD)
 {
+    for (int i=0; i<DATA_ENUMS; i++){
+      TLX.Meas[i] = 0.0f;
+      TLX.Raw[i] = 0.0f;
+    }
     Serial2.begin(19200, SERIAL_8N1, RXD, TXD);
     FindInvAddr();
     TLXGetStatus();
@@ -23,25 +27,24 @@ long DanfossTLX::GetInvData(String GetLocal){
 
 String DanfossTLX::RX_TLX(void) {
     const int RX_TIMEOUT=50;
-    const int RX_LENGTH =2;
+    const int RX_LENGTH =44; // complete message from inverter
     String RxBuffer;
     String RXData = "";
     unsigned long TimeNow = millis();
     
-    delay(15);  // 25 was not enough. typical delay 28-31ms. So wait for RX_LENGTH;
+    delay(50);  // typical delay 51ms for full message. So wait for RX_LENGTH
     while(Serial2.available() < RX_LENGTH){
       delay(1);
       if(millis() - TimeNow >RX_TIMEOUT)break;
     }
-    // delay(5);
-    // Serial.print("RX time :" + String(millis()-TimeNow) + " ms " );   
+    //Serial.println("RX time :" + String(millis()-TimeNow) + " ms " );   
      
     while (Serial2.available() > 0) {
       RxBuffer = String(Serial2.read(), HEX);
       if (RxBuffer.length() == 1)  RxBuffer = "0" + RxBuffer;
       RXData = RXData + RxBuffer;
     }
-    // Serial.print(" Length :" + String(RxBuffer.length() ) + " ");   
+    // Serial.print(" L:" + String(RXData.length() ) + " ");   
     RXData.toUpperCase();
     RXData.replace("7D5E", "7E");
     RXData.replace("7D5D", "7D");
@@ -236,6 +239,27 @@ void DanfossTLX::TLXGetParameters(void){
 
   for (int i = 0; i <DATA_ENUMS; i++) {
     TLX.Raw[i] = GetInvData(TLX.Cmd[i]);
+    // Santity check on valves
+    // Only GridDC? can be negative
+    if ( !(i>=GridDC1 && i<=GridDC3)  && TLX.Raw[i] < 0 ){
+      Serial.println("1)Neg. value" + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+    }                                 
+    //                                       59411995
+    if (  i==TotalE  && float(TLX.Raw[i]) > 100000000.0 ){
+      Serial.println("1)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+    }
+    //                                        3747306
+    if ( i==ProdTyear && float(TLX.Raw[i]) > 10000000.0 ){ //10.000,000 10.000kWh
+      Serial.println("2)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+    }
+    if (  !(i==ProdTyear || i==TotalE) && float(TLX.Raw[i]) > 64000.0 ){ // i,e 64 kWh - big enough for all other val
+      Serial.println("3)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+    }
+
     TLX.Meas[i] =float(TLX.Raw[i]) / TLX.Conv[i];
   }
 

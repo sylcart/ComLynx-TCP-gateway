@@ -1,14 +1,37 @@
 /*
     Name: DanfossTLX-RS485   
     
-    Based on TLX-ino by Torben https://github.com/TorbenNor/Danfoss-TLX
+    Based on TLX-ino by Torben  https://github.com/TorbenNor/Danfoss-TLX
 
-    Board LOLIN D32                                        
-    https://www.aliexpress.com/item/32808551116.htm
-      Pin 16  :RXD2 Seriel in
-      Pin 17  :TXD2 Seriel out
+    Board LOLIN D32             https://www.aliexpress.com/item/32808551116.htm
     R411A01 mini 3.3V Auto RS485 to TTL232 Converter Board  
-    https://www.aliexpress.com/item/32782552104.html
+                                https://www.aliexpress.com/item/32782552104.html
+
+    Prototype board 
+    D32 Lolin board
+      Pin 16  :RXD2 Seriel in  - Green
+      Pin 17  :TXD2 Seriel out - Yellow
+      GND - Black
+      3V - Red
+
+    RS485
+      VCC  Red
+      GND Black
+      TXD Yellow
+      RXD Green
+      GND Black
+      A+  Green/White
+      B-  Green
+
+    TLX
+      1 GND Orange+Orange/White
+      2 B Green/White
+      3 A Green
+      4 -> 6 termination  
+      5 -> 7 termination  
+      6 B -> 4
+      7 A -> 5
+      8                                
     
 */ 
 

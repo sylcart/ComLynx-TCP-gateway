@@ -27,7 +27,7 @@
 
 String Program="DanfossTLX-REST";
 String Arduino="1.18.19";
-String CodeDate = "2022-06-17";
+String CodeDate = "2022-06-19";
 String Board  = "LOLIN D32";
 
 DanfossTLX MyTLX(RXD2, TXD2);
@@ -150,7 +150,7 @@ void loop()
   }
   if (millis() - TimeTLX >  TIMETLX){
     MyTLX.TLXGetParameters();
-    MyTLX.TLXPrintAll();
+    //MyTLX.TLXPrintAll();
     TimeTLX = millis();
   }
   server.handleClient();
