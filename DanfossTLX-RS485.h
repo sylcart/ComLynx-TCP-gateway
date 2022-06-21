@@ -37,7 +37,15 @@
 
 class DanfossTLX {
   public:
-    
+    enum Mode_e{ OFFGRIDOFF, BOOT, CONNECT, ONGRID, FAILSAFE, OFFGRID, MODES }TLXMode;
+    const char* TLX_modes_txt[MODES] = {
+    "Off Grid, OFF   ", // Off Grid The complete inverter is shut down
+    "Connecting, Boot", // The inverter is booting,initializing itself etc.
+    "Connecting      ", // The inverter is monitoring the grid, preparing to connect.
+    "On Grid         ", // The inverter is connected to grid and is producing energy.
+    "Fail safe       ", // The inverter is disconnected from grid because of an error situation.
+    "Off Grid, Comm  " };// The inverter is shutdown (except for theuser interface and the communication interfaces
+
     enum Par_e                      { TotalE,                   ProdTyear,                      ProdTday,                   PvV1,                 PvV2,                    PvV3,                    PvA1,                    PvA2,                    PvA3,                    HZ1,                     HZ2,                     HZ3,                     HZ,                      GridDC1,                 GridDC2,                 GridDC3,                 GridV1,                  GridV2,                  GridV3,                  GridV1Avg,               GridV2Avg,               GridV3Avg,               GridA1,                  GridA2,                  GridA3,                  GridP1,                  GridP2,                 GridP3,                  GridP,        GridEL1day,              GridEL2day,              GridEL3day,              GridEday,                OpMode,         DATA_ENUMS }p_e;
     struct TLX_s                                                                                  
     {                                                                                             
@@ -55,11 +63,13 @@ class DanfossTLX {
     }TLX;
     
     DanfossTLX(const byte RXD2, const byte TXD2);
-    void TLXGetStatus(void);
-    void TLXGetParameters(void);
-    void TLXPrintAll(void);
+    void GetStatus(void);
+    void GetAllParameters(void);
+    void GetParameters(void);
+    void PrintAll(void);
     String LongString(Par_e ParEnum );
     String MeasString(Par_e ParEnum);
+    bool SanityCheck(int i);
 
   private:
     const unsigned short FCSTable[256] =
@@ -105,6 +115,10 @@ class DanfossTLX {
     String PostGet      = "8000000000"; 
     String GetAddr      = "0015";       // Ping Size 0x00,Type 0x15 
     String TXData ;
+    String PPPGOODFCS16 = "f0b8";
+    const long NOTVALID = 0x0f0f0f0f;
+
+    
     byte   DataAsc[100]; // Buffer
     
     long    GetInvData(String GetLocal);

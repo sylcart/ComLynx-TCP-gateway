@@ -14,43 +14,71 @@ DanfossTLX::DanfossTLX(const byte RXD, const byte TXD)
     }
     Serial2.begin(19200, SERIAL_8N1, RXD, TXD);
     FindInvAddr();
-    TLXGetStatus();
-    TLXGetParameters();
+    GetStatus();
+    GetAllParameters();
 }
 
 long DanfossTLX::GetInvData(String GetLocal){
     String RXData;
     TX_TLX(GetLocal);
     RXData = RX_TLX();
-    return HexToDec(RXData.substring(36, 36 + 2) + RXData.substring(34, 34 + 2) + RXData.substring(32, 32 + 2) + RXData.substring(30, 30 + 2));
+    if (RXData.length() >= 36+2){
+     return HexToDec(RXData.substring(36, 36 + 2) + RXData.substring(34, 34 + 2) + RXData.substring(32, 32 + 2) + RXData.substring(30, 30 + 2));
+    }else{
+      Serial.println("ERR RX:" + String(RXData.length()) + " " );
+    }
+    return NOTVALID;
 }
 
 String DanfossTLX::RX_TLX(void) {
-    const int RX_TIMEOUT=50;
-    const int RX_LENGTH =44; // complete message from inverter
+    const int RX_TIMEOUT=75;
+    const int RX_LENGTH = 22; // complete message from inverter
     String RxBuffer;
     String RXData = "";
     unsigned long TimeNow = millis();
     
-    delay(50);  // typical delay 51ms for full message. So wait for RX_LENGTH
+    delay(25);  // typical delay 51ms for full message. So wait for RX_LENGTH
     while(Serial2.available() < RX_LENGTH){
-      delay(1);
-      if(millis() - TimeNow >RX_TIMEOUT)break;
+      delay(2);
+      unsigned long t = millis() - TimeNow;
+      if(t > RX_TIMEOUT){
+        Serial.println("ERR RX Timeout:" + String(t) + " ms "  + String(Serial2.available()) );   
+        break;
+      }
     }
-    //Serial.println("RX time :" + String(millis()-TimeNow) + " ms " );   
+    //Serial.println("RX time :" + String(millis()-TimeNow) + " ms " + String(Serial2.available()) );   
      
     while (Serial2.available() > 0) {
       RxBuffer = String(Serial2.read(), HEX);
       if (RxBuffer.length() == 1)  RxBuffer = "0" + RxBuffer;
       RXData = RXData + RxBuffer;
+      delay(2);
     }
     // Serial.print(" L:" + String(RXData.length() ) + " ");   
     RXData.toUpperCase();
     RXData.replace("7D5E", "7E");
     RXData.replace("7D5D", "7D");
-    //\\Serial.print(">" + RXData + "<");   
-    //\\ If RXdata does not look right then set ERROR flag and try to reinitialize Serial2.
-   
+    // Serial.print(">" + RXData + "<");   
+    
+    
+    //Checksum ERROR IN CALC Possible 8bit/16bit issues ir just not understood the package and check ...
+    /*
+    if(RXData.length() >= 44  && RXData.length() <100){
+      char ByteBuf[100]; // Buffer
+      sprintf(ByteBuf,"%s",RXData.substring(1).c_str() );
+      byte *byteptr = (byte *)&ByteBuf[2];               // Skip the first byte (2chars) Initially pFirstByte should point to the first byte to be included in 
+                                                         // the checksum calculation, which is the second byte in the message, the Address field (0xFF).
+                                                         // Exampler 7EFF03C6B100020A81C80D800A02453C00000090117E
+ 
+      String fcs = pppfcs16(byteptr,18);                 //  12 + (10(0x0A) or 29(0x1D))  - 4 =>  18 || 37
+      
+      if (fcs == PPPGOODFCS16){
+        Serial.println("Checksum OK");
+      }else{
+        Serial.println("Checksum error :"+ fcs +" "+ String(ByteBuf) + " Len" + String(RXData.length()));
+      }
+    }*/
+    
     return RXData;
 }
 
@@ -109,7 +137,7 @@ unsigned int DanfossTLX::HexToDec(String hexString)
     return decValue;
 }
 
-void DanfossTLX::TLXPrintAll(void)
+void DanfossTLX::PrintAll(void)
 {
   Serial.println("\nProduct#                                " + TLX.ProductNumber);
   Serial.println("Serial#                                 " + TLX.SerialNumber);
@@ -150,7 +178,7 @@ String DanfossTLX::MeasString(Par_e ParEnum)
   return Meas;
 }
 
-void DanfossTLX::TLXGetStatus(void)
+void DanfossTLX::GetStatus(void)
 {
   String RXData;
   TX_TLX("4603");
@@ -226,41 +254,59 @@ void DanfossTLX::TLXGetStatus(void)
   Serial.println("Product#                                " + TLX.ProductNumber);
   Serial.println("Serial#                                 " + TLX.SerialNumber);
 }
+void DanfossTLX::GetParameters(void){
+  static int i = TotalE;
+  
+  long TmpRaw = GetInvData(TLX.Cmd[i]);
+  if (TmpRaw == NOTVALID){
+    Serial.println(TLX.ParName[i] + " Raw Not Valid");
+  }else{
+    TLX.Raw[i] = TmpRaw;
+    if(SanityCheck(i)){
+      TLX.Meas[i] =float(TLX.Raw[i]) / TLX.Conv[i];
+    }
+  }
 
-void DanfossTLX::TLXGetParameters(void){
-  enum Mode_e{ OFFGRIDOFF, BOOT, CONNECT, ONGRID, FAILSAFE, OFFGRID, MODES }TLXMode;
-  const char* TLX_modes_txt[MODES] = {
-    "Off Grid, OFF   ", // Off Grid The complete inverter is shut down
-    "Connecting, Boot", // The inverter is booting,initializing itself etc.
-    "Connecting      ", // The inverter is monitoring the grid, preparing to connect.
-    "On Grid         ", // The inverter is connected to grid and is producing energy.
-    "Fail safe       ", // The inverter is disconnected from grid because of an error situation.
-    "Off Grid, Comm  " };// The inverter is shutdown (except for theuser interface and the communication interfaces
+  if (i == OpMode){
+    TLXMode = MODES;
+    if (TLX.Raw[OpMode] <= 9){
+      TLXMode = OFFGRIDOFF;
+    }else if(TLX.Raw[OpMode]>=10 && TLX.Raw[OpMode]<=49){
+      TLXMode = BOOT;
+    }else if(TLX.Raw[OpMode]>=50 && TLX.Raw[OpMode]<=59){
+      TLXMode = CONNECT;
+    }else if(TLX.Raw[OpMode]>=60 && TLX.Raw[OpMode]<=69){
+      TLXMode = ONGRID;
+    }else if(TLX.Raw[OpMode]>=70 && TLX.Raw[OpMode]<=79){
+      TLXMode = FAILSAFE;
+    }else if(TLX.Raw[OpMode]>=80 && TLX.Raw[OpMode]<=89){
+      TLXMode = OFFGRID;
+    }
+    if (TLXMode < MODES){
+      TLX.OpModeTxt = TLX_modes_txt[TLXMode];
+      //Serial.println("Operation mode              :" + String(TLX_modes_txt[TLXMode]) + String(TLX.Raw[OpMode]) );   
+    }else {
+      TLX.OpModeTxt = "Mode not known";
+      //Serial.println("Operation mode              :" + String("ERROR")+ String(TLX.Raw[OpMode]) );
+    }
+  }  
+  i++;
+  if(i >= DATA_ENUMS){
+    i = TotalE;
+  }
+}
+void DanfossTLX::GetAllParameters(void){
 
   for (int i = 0; i <DATA_ENUMS; i++) {
-    TLX.Raw[i] = GetInvData(TLX.Cmd[i]);
-    // Santity check on valves
-    // Only GridDC? can be negative
-    if ( !(i>=GridDC1 && i<=GridDC3)  && TLX.Raw[i] < 0 ){
-      Serial.println("1)Neg. value" + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
-      TLX.Raw[i]= 0;
-    }                                 
-    //                                       59411995
-    if (  i==TotalE  && float(TLX.Raw[i]) > 100000000.0 ){
-      Serial.println("1)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
-      TLX.Raw[i]= 0;
+    long TmpRaw = GetInvData(TLX.Cmd[i]);
+    if (TmpRaw == NOTVALID){
+      Serial.println(TLX.ParName[i] + " Raw Not Valid");
+    }else{
+      TLX.Raw[i] = TmpRaw;
+      if(SanityCheck(i)){
+        TLX.Meas[i] =float(TLX.Raw[i]) / TLX.Conv[i];
+      }
     }
-    //                                        3747306
-    if ( i==ProdTyear && float(TLX.Raw[i]) > 10000000.0 ){ //10.000,000 10.000kWh
-      Serial.println("2)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
-      TLX.Raw[i]= 0;
-    }
-    if (  !(i==ProdTyear || i==TotalE) && float(TLX.Raw[i]) > 64000.0 ){ // i,e 64 kWh - big enough for all other val
-      Serial.println("3)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
-      TLX.Raw[i]= 0;
-    }
-
-    TLX.Meas[i] =float(TLX.Raw[i]) / TLX.Conv[i];
   }
 
   TLXMode = MODES;
@@ -284,4 +330,32 @@ void DanfossTLX::TLXGetParameters(void){
     TLX.OpModeTxt = "Mode not known";
     //Serial.println("Operation mode              :" + String("ERROR")+ String(TLX.Raw[OpMode]) );
   }
+}
+
+bool DanfossTLX::SanityCheck(int i){
+    // Santity check on valves
+    // Only GridDC? can be negative
+    if ( !(i>=GridDC1 && i<=GridDC3)  && TLX.Raw[i] < 0 ){
+      Serial.println("Neg. value" + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+      return false;
+    }                                 
+    
+    if (  i==TotalE  && float(TLX.Raw[i]) > 100000000.0 ){
+      Serial.println("1)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+      return false;
+    }
+    
+    if ( i==ProdTyear && float(TLX.Raw[i]) > 10000000.0 ){ //10.000,000 10.000kWh
+      Serial.println("2)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+      return false;
+    }
+    if (  !(i==ProdTyear || i==TotalE) && float(TLX.Raw[i]) > 64000.0 ){ // i,e 64 kWh - big enough for all other val
+      Serial.println("3)To Big " + TLX.ParName[i] + " Raw " + TLX.Raw[i]);
+      TLX.Raw[i]= 0;
+      return false;
+    } 
+  return true;
 }

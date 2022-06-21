@@ -22,12 +22,9 @@
 #define RXD2 16
 #define TXD2 17
 
-//const char* ssid     = SSID;
-//const char* password = WIFI_PSWD;
-
 String Program="DanfossTLX-REST";
 String Arduino="1.18.19";
-String CodeDate = "2022-06-19";
+String CodeDate = "2022-06-21";
 String Board  = "LOLIN D32";
 
 DanfossTLX MyTLX(RXD2, TXD2);
@@ -140,20 +137,30 @@ void setup()
 
 void loop()
 {
-  const unsigned long  WIFITIME = 30000;
-  const unsigned long  TIMETLX = 15000;
+  const unsigned long  WIFITIME  = 30000;
+  const unsigned long  TIMETLX   = 800; // 36 par x 2 times a minute -> ~830ms each (Not to block server.handleClient();
+  const unsigned long  TIMEPRINT = 60000;
   static unsigned long TimeTLX = millis();
+  static unsigned long TimePrint = millis();
+
+  server.handleClient();
   
   // Wraparround every ~50 days;
+  // Should not be neceesary after changer to unsigned long
   if (millis() < TimeTLX){
     TimeTLX = millis();
   }
+ 
   if (millis() - TimeTLX >  TIMETLX){
-    MyTLX.TLXGetParameters();
-    //MyTLX.TLXPrintAll();
+    MyTLX.GetParameters();
+    //MyTLX.PrintAll();
     TimeTLX = millis();
   }
-  server.handleClient();
+  if (millis() - TimePrint >  TIMEPRINT){
+    //MyTLX.PrintAll();
+    TimePrint = millis();
+  }
+  
   // Test if connected
   if(WiFi.status() != WL_CONNECTED){
     Serial.println("Restart Wifi");
@@ -164,9 +171,9 @@ void loop()
       delay(500);
       Serial.print(".");
     }
-    Serial.println("Timeout");
+    if(WiFi.status() != WL_CONNECTED){
+      Serial.println("Timeout");
+    }
   }
-  
-  
   delay(2);
 }
