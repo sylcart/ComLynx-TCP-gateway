@@ -1,0 +1,102 @@
+rest:
+  - resource: http:/[IP-Address]/All
+    sensor:
+      # Info
+      - name: "TLX Operation Mode"
+        value_template: "{{ value_json.OpMode }}"
+      - name: "TLX Operation Mode Text"
+        value_template: "{{ value_json.OpModeTxt }}"
+      - name: "TLX Product Number"
+        value_template: "{{ value_json.Product }}"
+      - name: "TLX Serial"
+        value_template: "{{ value_json.Serial }}"        
+      # Produkction Energy
+      - name: "TLX Total Energy Production"
+        value_template: "{{ value_json.TotalE |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing
+      - name: "TLX Production today"
+        value_template: "{{ value_json.ProdTday |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing
+      - name: "TLX Production this year"
+        value_template: "{{ value_json.ProdTyear |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing      
+      - name: "Tmp Grid Energy Today"
+        value_template: "{{ value_json.GridEday |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing
+      - name: "Tmp Grid Energy Today, L1"
+        value_template: "{{ value_json.GridEL1day |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing		
+      - name: "Tmp Grid Energy Today, L2"
+        value_template: "{{ value_json.GridEL2day |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing		
+      - name: "Tmp Grid Energy Today, L3"
+        value_template: "{{ value_json.GridEL3day |round(3)}}"
+        unit_of_measurement: kWh
+        device_class: 'energy'
+        state_class: total_increasing        
+      # Power
+      - name: "TLX Grid Power"
+        value_template: "{{ value_json.GridP |round(0)}}"
+        unit_of_measurement: W
+        device_class: 'power'
+      - name: "TLX_GridP1"
+        value_template: "{{ value_json.GridP1 |round(0)}}"
+        unit_of_measurement: W
+        device_class: 'power'
+      - name: "TLX_GridP2"
+        value_template: "{{ value_json.GridP2 |round(0)}}"
+        unit_of_measurement: W
+        device_class: 'power'
+      - name: "TLX_GridP3"
+        value_template: "{{ value_json.GridP3 |round(0)}}"
+        unit_of_measurement: W
+        device_class: 'power'	
+      # Volt / Ampere
+      - name: "TLX_GridV1"
+        value_template: "{{ value_json.GridV1 |round(1)}}"
+        unit_of_measurement: V
+      - name: "TLX_GridV2"
+        value_template: "{{ value_json.GridV2 |round(1)}}"
+        unit_of_measurement: V
+      - name: "TLX_GridV3"
+        value_template: "{{ value_json.GridV3 |round(1)}}"
+        unit_of_measurement: V		 
+      - name: "TLX_PvV1"
+        value_template: "{{ value_json.PvV1 |round(1)}}"
+        unit_of_measurement: V
+      - name: "TLX_PvV2"
+        value_template: "{{ value_json.PvV2 |round(1)}}"
+        unit_of_measurement: V
+      - name: "TLX_PvV3"
+        value_template: "{{ value_json.PvV3 |round(1)}}"
+        unit_of_measurement: V	
+      - name: "TLX_GridA1"
+        value_template: "{{ value_json.GridA1 |round(1)}}"
+        unit_of_measurement: A
+      - name: "TLX_GridA2"
+        value_template: "{{ value_json.GridA2 |round(1)}}"
+        unit_of_measurement: A
+      - name: "TLX_GridA3"
+        value_template: "{{ value_json.GridA3 |round(1)}}"
+        unit_of_measurement: A		
+      - name: "TLX_PvA1"
+        value_template: "{{ value_json.PvA1 |round(1)}}"
+        unit_of_measurement: A
+      - name: "TLX_PvA2"
+        value_template: "{{ value_json.PvA2 |round(1)}}"
+        unit_of_measurement: A
+      - name: "TLX_PvA3"
+        value_template: "{{ value_json.PvA3 |round(1)}}"
+        unit_of_measurement: A	

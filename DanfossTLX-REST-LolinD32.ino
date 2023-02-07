@@ -17,21 +17,34 @@
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
-
 #define BLYNK_PRINT Serial
 #define RXD2 16
 #define TXD2 17
 
 String Program="DanfossTLX-REST";
 String Arduino="1.18.19";
-String CodeDate = "2022-06-21";
-String Board  = "LOLIN D32";
+String CodeDate = "2023-02-07";
+String Board  = "LOLIN D32 - ESP32 2.0.3";
 
 DanfossTLX MyTLX(RXD2, TXD2);
 WebServer server(80);
 
-StaticJsonDocument<250> jsonDocument;
-char jsonbuffer[250];
+StaticJsonDocument<1000> jsonDocument;
+char jsonbuffer[1000];
+
+// All values from TLX in one json respons without units
+void CreateJsonAll(void){
+  jsonDocument.clear();
+  float temp = 1.0;
+  for (int i = 0; i < MyTLX.DATA_ENUMS; i++) {
+    jsonDocument["Product"] =            MyTLX.TLX.ProductNumber.c_str();
+    jsonDocument["Serial"]  =            MyTLX.TLX.SerialNumber.c_str();
+    jsonDocument["OpModeTxt"] =          MyTLX.TLX.OpModeTxt.c_str();
+    jsonDocument[MyTLX.TLX.ParName[i]] = MyTLX.MeasString((DanfossTLX::Par_e)i);
+  }  
+  serializeJson(jsonDocument, jsonbuffer);  
+}
+  
 void CreateJson(const char *tag, float value, const char *unit) {  
   jsonDocument.clear();
   jsonDocument["type"] = tag;
@@ -49,9 +62,9 @@ void CreateJsonTxt(const char *tag, const char *value) {
 // Web page that holds all parameters/measurements in a table
 void HandleRoot() {
   String msg = "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=60><title>Danfoss TLX</title></head><style>tr:nth-child(even) {background-color: #f3f3f3;}</style><body><h1>Danfoss TLX</h1><table><tr><th>Description</th><th>Value</th><th>Unit</th><th>Indeks</th></tr>";
-  if(MyTLX.TLX.ProductNumber.c_str()[0] != NULL ){ msg += "<tr><td>Product Number</td><td>" + MyTLX.TLX.ProductNumber + "</td><td></td><td></td></tr>" ;}
-  if(MyTLX.TLX.SerialNumber.c_str()[0]  != NULL ){ msg += "<tr><td>Serial Number</td><td>" + MyTLX.TLX.SerialNumber + "</td><td></td><td></td></tr>" ;}
-  if(MyTLX.TLX.OpModeTxt.c_str()[0] != NULL){ msg += "<tr><td>Operation mode</td><td>" + MyTLX.TLX.OpModeTxt + "</td><td></td><td></td></tr>" ;}
+  if(MyTLX.TLX.ProductNumber.c_str()[0] != 0 ){ msg += "<tr><td>Product Number</td><td>" + MyTLX.TLX.ProductNumber + "</td><td></td><td></td></tr>" ;}
+  if(MyTLX.TLX.SerialNumber.c_str()[0]  != 0 ){ msg += "<tr><td>Serial Number</td><td>" + MyTLX.TLX.SerialNumber + "</td><td></td><td></td></tr>" ;}
+  if(MyTLX.TLX.OpModeTxt.c_str()[0] != 0){ msg += "<tr><td>Operation mode</td><td>" + MyTLX.TLX.OpModeTxt + "</td><td></td><td></td></tr>" ;}
   for (int i = 0; i < MyTLX.DATA_ENUMS; i++) {
     msg +=  "<tr><td>" + MyTLX.TLX.Name[i] +"</td><td>"+MyTLX.MeasString((DanfossTLX::Par_e)i)+"</td><td>"+MyTLX.TLX.Unit[i]+"</td><td>"+MyTLX.TLX.ParName[i] + "</td></tr>";
   }                 
@@ -130,6 +143,7 @@ void setup()
   server.on("/OpModeTxt", []() { CreateJsonTxt("OpModeTxt", MyTLX.TLX.OpModeTxt.c_str());      server.send(200, "application/json", jsonbuffer); }); 
   server.on("/Product", []()   { CreateJsonTxt("Product",   MyTLX.TLX.ProductNumber.c_str() ); server.send(200, "application/json", jsonbuffer); }); 
   server.on("/SerialTxt", []() { CreateJsonTxt("Serial",    MyTLX.TLX.SerialNumber.c_str() );  server.send(200, "application/json", jsonbuffer); }); 
+  server.on("/All",       []() { CreateJsonAll();  server.send(200, "application/json", jsonbuffer); }); 
   server.onNotFound(ReturnTLXMeasValue);
   server.begin();
   Serial.println("HTTP server started\nSetup ended");
