@@ -26,22 +26,22 @@ rest:
         unit_of_measurement: kWh
         device_class: 'energy'
         state_class: total_increasing      
-      - name: "Tmp Grid Energy Today"
+      - name: "TLX Grid Energy Today"
         value_template: "{{ value_json.GridEday |round(3)}}"
         unit_of_measurement: kWh
         device_class: 'energy'
         state_class: total_increasing
-      - name: "Tmp Grid Energy Today, L1"
+      - name: "TLX Grid Energy Today, L1"
         value_template: "{{ value_json.GridEL1day |round(3)}}"
         unit_of_measurement: kWh
         device_class: 'energy'
         state_class: total_increasing		
-      - name: "Tmp Grid Energy Today, L2"
+      - name: "TLX Grid Energy Today, L2"
         value_template: "{{ value_json.GridEL2day |round(3)}}"
         unit_of_measurement: kWh
         device_class: 'energy'
         state_class: total_increasing		
-      - name: "Tmp Grid Energy Today, L3"
+      - name: "TLX Grid Energy Today, L3"
         value_template: "{{ value_json.GridEL3day |round(3)}}"
         unit_of_measurement: kWh
         device_class: 'energy'
