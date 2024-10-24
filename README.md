@@ -2,10 +2,12 @@
 RS485 Communication with Danfoss TLX solar inverter and REST server
 
 I use it for Home Assistant integration where each parameter/value can be read as a sensor.
+
 See DanfossTLX-RS485.h for parameters
+
     sensor:
       # Danfoss TLX
-        # Energy
+      # Energy
       - platform: rest
         resource: http://[IP-Address]/TotalE
         name: "TLX Total Energy Production"
@@ -14,33 +16,31 @@ See DanfossTLX-RS485.h for parameters
         unit_of_measurement: kWh
         device_class: 'energy'
         state_class: total_increasing
-        
+            
 But since HA would fire request for all entities almost at the same time it could'nt keep up and some would end up unavailable.
 So instead of having each value returned in a seperat call i've added them all in stame same json return. See configuration.yaml for all rest sensors
 
-rest:
-  - resource: http://[IP-Address]/All
-    sensor:
-      # Info
-      - name: "TLX Operation Mode"
-        value_template: "{{ value_json.OpMode }}"
-      - name: "TLX Operation Mode Text"
-        value_template: "{{ value_json.OpModeTxt }}"
-      - name: "TLX Product Number"
-        value_template: "{{ value_json.Product }}"
-      - name: "TLX Serial"
-        value_template: "{{ value_json.Serial }}"        
-      # Produkction Energy
-      - name: "TLX Total Energy Production"
-        value_template: "{{ value_json.TotalE |round(3)}}"
-        unit_of_measurement: kWh
-        device_class: 'energy'
-        state_class: total_increasing
-       ...
-       ...
-     
-
-
+    rest:
+      - resource: http://[IP-Address]/All
+        sensor:
+          # Info
+          - name: "TLX Operation Mode"
+            value_template: "{{ value_json.OpMode }}"
+          - name: "TLX Operation Mode Text"
+            value_template: "{{ value_json.OpModeTxt }}"
+          - name: "TLX Product Number"
+            value_template: "{{ value_json.Product }}"
+          - name: "TLX Serial" 
+           value_template: "{{ value_json.Serial }}"        
+          # Produkction Energy
+          - name: "TLX Total Energy Production"
+            value_template: "{{ value_json.TotalE |round(3)}}"
+            unit_of_measurement: kWh
+            device_class: 'energy'
+            state_class: total_increasing
+            ...
+            ...
+         
 Based on TLX-ino by Torben https://github.com/TorbenNor/Danfoss-TLX
     
 
