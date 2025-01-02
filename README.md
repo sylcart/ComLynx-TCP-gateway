@@ -85,7 +85,9 @@ esp32 board
 R411A01 mini 3.3V Auto RS485 to TTL232 Converter Board or similar.
 
 # WIRING:
-See the [schema]("/doc/comlynx TCP gateway wiring schema.png?raw=true" "Wiring Schema")  for connecting all devices and the inverters. Please note that termination is mandatory on last inverter of the bus. (no termination on R411A01's side).
+See the schema for connecting all devices and the inverters. Please note that termination is mandatory on last inverter of the bus. (no termination on R411A01's side).
+
+<img  alt="Wiring Schema" src="/doc/comlynx TCP gateway wiring schema.png">
 
 By using RJ45 connectors on inverter's side, color code may vary, I respected the danfoss's color code ou schema by in my case, orange and white/orange were ground and green and white/green were datas.
 Important is to cross the data wire between inverters and R411A01.
