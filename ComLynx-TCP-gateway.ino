@@ -7,20 +7,20 @@
     Based on DanfossTLX by Torben  https://github.com/TorbenNor/Danfoss-TLX
    
     Used Libraries - output from verbose compile
-    Using library ArduinoOTA at version 3.1.0
-    Using library Networking at version 3.1.0
-    Using library Update at version 3.1.0
-    Using library WiFi at version 3.1.0
+    Using library ArduinoOTA at version 3.1.1
+    Using library Networking at version 3.1.1
+    Using library Update at version 3.1.1
+    Using library WiFi at version 3.1.1
     Using library ArduinoJson at version 7.3.0
-    Using library PubSubClient at version 2.8
+    Using library MQTT at version 2.5.2
     Using library RemoteDebug2 at version 4.0.1
-    Using library ESP Async WebServer at version 3.4.5
-    Using library FS at version 3.1.0
-    Using library AsyncTCP at version 1.1.4
-    Using library ESPmDNS at version 3.1.0
-    Using library Preferences at version 3.1.0
+    Using library ESP Async WebServer at version 3.6.0
+    Using library FS at version 3.1.1
+    Using library Async TCP at version 3.3.2
+    Using library ESPmDNS at version 3.1.1
+    Using library Preferences at version 3.1.1
     Using library WebSockets at version 2.6.1
-    Using library NetworkClientSecure at version 3.1.0
+    Using library NetworkClientSecure at version 3.1.1
     
 */ 
 
@@ -46,9 +46,8 @@
 #define HOSTNAME "CLX-GW"
 
 #define Program "ComLynx-TCP-gateway"
-#define Version "0.3"
-#define CodeDate "2025-01-02"
-#define Board "LOLIN D32 - ESP32 3.1.0"
+#define Version "0.4"
+#define CodeDate "2025-01-10"
 String hostname(HOSTNAME);
 
 String SSID;
@@ -72,7 +71,8 @@ unsigned int MQTTPort;
 String MQTTUser;
 String MQTTPwd;
 String MQTTPrefix;
-String MQTTdeviceName ;
+boolean MQTTDiscOn;
+String MQTTdeviceName;
 unsigned int HTTPPort;
 
 boolean* InverterScan;
@@ -140,7 +140,8 @@ void InitInverters(std::vector<DanfossInverter*> *_InverterList,std::vector<Inve
 		// Get inverter from memory list
 		MemInv = _InverterMEMList->at(i);
     if (MemInv->InvType == "TLX") {
-      _InverterList->push_back(new DanfossTLX(&MyComLynx, MemInv->Address, &MemInv->SerialNumber, &MemInv->ProductNumber));
+      Serial.print(String(MemInv->OptionByte));
+      _InverterList->push_back(new DanfossTLX(&MyComLynx, MemInv->Address, &MemInv->SerialNumber, &MemInv->ProductNumber, &MemInv->OptionByte));
       Serial.print("New TLX inverter initialized\n");
     } else {
       if (MemInv->InvType == "ULX") {
@@ -157,7 +158,6 @@ void setup()
   delay(800);
   Serial.println("Booting");
   Serial.println(String(Program) + " " + String(Version));
-  Serial.println(String(Board));
   Serial.println(String("Compile: ") + String(__DATE__) + " " + String(__TIME__));
   startMillis = millis();
 
@@ -212,7 +212,7 @@ void setup()
 
   MQTTClient.begin(WifiMqttClient);
 
-  if (MQTTOn) {
+  if (MQTTOn && MQTTDiscOn) {
     for(int i = 0; i < mypInverterList.size(); i++){
       myComLynxInverter = mypInverterList.at(i);
       MQTTDiscovery(myComLynxInverter);
@@ -246,13 +246,13 @@ void loop()
       myComLynxInverter = mypInverterList.at(i);
 
       // Serial.print ("NumberOfParameters : ");
-      // Serial.println (mypInverterList.at(i)->PrintParametersCount());
-      //mypInverterList.at(i)->FakeGetStatus();
+      Serial.println (mypInverterList.at(i)->PrintParametersCount());
+      // //mypInverterList.at(i)->FakeGetStatus();
       // Serial.print ("Type : ");
       // Serial.println (mypInverterList.at(i)->PrintType());
       // Serial.print ("SN : ");
       // Serial.println (mypInverterList.at(i)->PrintSN());
-      // mypInverterList.at(i)->GetName();
+      // //mypInverterList.at(i)->GetName();
       // Serial.print ("Name : ");
       // Serial.println (mypInverterList.at(i)->PrintName());
       // Serial.print ("Product Number : ");

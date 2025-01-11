@@ -1,8 +1,6 @@
 /*
     Name: ComLynx-TCP-gateway webserver code
-
-    Using library ESPAsyncWebServer at version 3.4.5
-
+    Using library ESPAsyncWebServer at version 3.6.0
 */
 
 enum Menu_e
@@ -425,6 +423,10 @@ const char *HTMLContentMQTT = R"====(
         <div style='font-size: smaller;'>  (one word only)  </div>
       </div>
       <div class='r'>
+        <label for='MQTTDiscOn'>Enable MQTT autodiscovery : </label>
+        <input type='checkbox' name='MQTTDiscOn' id='MQTTDiscOn' style='width:25px;'>
+      </div>
+      <div class='r'>
         <label for='MQTTdeviceName'>MQTT Device Name :  </label>
         <input type='text' name='MQTTdeviceName' id='MQTTdeviceName' >
         <div style='font-size: smaller;'>  (one word only)  </div>
@@ -449,6 +451,11 @@ const char *HTMLContentCLX = R"====(
       <div class='boldT'>
         <br>Inverters
       </div>
+      <div style='text-align:center;'> For TLX inverters only, optional parameters can be activated : </div>
+      <div style='text-align:center;'> HistData : historical datas like production of the day, week, month and year.</div>
+      <div style='text-align:center;'> If these sensors are connected to the inverter :</div>
+      <div style='text-align:center;'> ModTempS : modules temperature, AmbTempS : ambiant temperature, IRSTemp : IR sensor temperature, IRS : Irradiance, EM : external Energy Meter</div>
+      <br>
       <p>
         <div style='padding-left:30px;' id="cont"></div>   <!--the container to add the table.-->
       </p>
@@ -542,6 +549,7 @@ const char *MQTTSetJS = R"====(
         GID("MQTTUser").value = myObj.MQTTUser;
         GID("MQTTPwd").value = myObj.MQTTPwd;
         GID("MQTTPrefix").value = myObj.MQTTPrefix;
+        GID("MQTTDiscOn").checked = myObj.MQTTDiscOn;
         GID("MQTTdeviceName").value = myObj.MQTTdeviceName;
         checkDisabled();
       }         
@@ -551,12 +559,13 @@ const char *MQTTSetJS = R"====(
   }
 
   function SendValues(){
-    var MQTTOn=GID("MQTTOn").checked;
+    var MQTTOn = GID("MQTTOn").checked;
     var MQTTIP = GID("MQTTIP").value;
     var MQTTPort = GID("MQTTPort").value;
     var MQTTUser = GID("MQTTUser").value.trim();
     var MQTTPwd = GID("MQTTPwd").value.trim();
     var MQTTPrefix = GID("MQTTPrefix").value.trim();
+    var MQTTDiscOn = GID("MQTTDiscOn").checked;
     var MQTTdeviceName = GID("MQTTdeviceName").value.trim();
          
     var jsonFormInfo = JSON.stringify({
@@ -566,6 +575,7 @@ const char *MQTTSetJS = R"====(
         MQTTUser:MQTTUser,
         MQTTPwd:MQTTPwd,
         MQTTPrefix:MQTTPrefix,
+        MQTTDiscOn:MQTTDiscOn,
         MQTTdeviceName:MQTTdeviceName
     });
 
@@ -588,7 +598,8 @@ const char *MQTTSetJS = R"====(
     GID("MQTTPort").disabled=!GID("MQTTOn").checked;
     GID("MQTTUser").disabled=!GID("MQTTOn").checked;
     GID("MQTTPwd").disabled=!GID("MQTTOn").checked; 
-    GID("MQTTPrefix").disabled=!GID("MQTTOn").checked; 
+    GID("MQTTPrefix").disabled=!GID("MQTTOn").checked;
+    GID("MQTTDiscOn").disabled=!GID("MQTTOn").checked;
     GID("MQTTdeviceName").disabled=!GID("MQTTOn").checked; 
   }
 )====";
@@ -685,7 +696,6 @@ const char *CLSetJS = R"====(
   let tableFromJson = (myJsonObj) => {
 
     if(myJsonObj != null && Object.keys(myJsonObj).length > 0) {
-      // Extract value from table header. 
       for (let i = 0; i < myJsonObj.length; i++) {
         for (let key in myJsonObj[i]) {
           if (col.indexOf(key) === -1) {
@@ -697,7 +707,6 @@ const char *CLSetJS = R"====(
       col = ['Id', 'InvType', 'ProductNumber', 'SerialNumber', 'Address'];  
     }
 
-    // create invtype list
     var InvTypes = ['TLX', 'ULX'];
     var dataList = document.createElement('datalist');
     dataList.id = 'InvType_list';
@@ -709,27 +718,22 @@ const char *CLSetJS = R"====(
     })
     document.body.appendChild(dataList);
 
-    // Create table.
-    //const invTable = document.createElement("table");
     let invTable = document.createElement("table");
     invTable.setAttribute('id', 'invTable');  // table id.
 
-    // Create table header row using the extracted headers above.
-    let tr = invTable.insertRow(-1);                   // table row.
+    let tr = invTable.insertRow(-1);
 
     for (let i = 0; i < col.length; i++) {
-      let th = document.createElement("th");      // table header.
+      let th = document.createElement("th");
       th.innerHTML = col[i];
       tr.appendChild(th);
     }
 
-    // append empty header for remove button column
-    let th = document.createElement("th");      // table header.
+    let th = document.createElement("th");
     th.innerHTML = "";
     tr.appendChild(th);
 
     if(myJsonObj != null && Object.keys(myJsonObj).length > 0) {
-      // add json data to the table as rows.
       for (let i = 0; i < myJsonObj.length; i++) {
 
         tr = invTable.insertRow(-1);
@@ -740,54 +744,93 @@ const char *CLSetJS = R"====(
             tabCell.innerHTML = myJsonObj[i][col[j]];
           } else {
             const inputCell = document.createElement('input');
-            inputCell.setAttribute('type', 'text');
-            if (col[j] == "InvType") inputCell.setAttribute('list', "InvType_list");
-            inputCell.setAttribute('value', myJsonObj[i][col[j]]);
+            if (col[j] == "HistData" || col[j] == "ModTempS" || col[j] == "AmbTempS" || col[j] == "IRSTemp" || col[j] == "IRS" || col[j] == "EM") {
+              inputCell.setAttribute('type', 'checkbox');
+              if (myJsonObj[i][col[j]] == 1) {
+                inputCell.setAttribute('checked', '');
+              } else {
+                inputCell.removeAttribute('checked');
+              }
+              if (myJsonObj[i]['InvType'] != "TLX" ) {
+                inputCell.setAttribute('disabled', true);
+              }
+            } else {
+              inputCell.setAttribute('type', 'text');
+              if (col[j] == "ProductNumber" || col[j] == "SerialNumber") {
+                inputCell.setAttribute('maxlength', 11);
+                inputCell.setAttribute('size', 11);
+              }
+              if (col[j] == "Address" ) {
+                inputCell.setAttribute('maxlength', 4);
+                inputCell.setAttribute('size', 4);
+              }
+              if (col[j] == "InvType") {
+                inputCell.setAttribute('maxlength', 3);
+                inputCell.setAttribute('size', 3);
+                inputCell.setAttribute('list', "InvType_list");
+                inputCell.addEventListener('input', checkDisabled);
+              }
+              inputCell.setAttribute('value', myJsonObj[i][col[j]]);
+            }
+            inputCell.setAttribute('id',col[j]);
             tabCell.appendChild(inputCell);
           }
         }
 
         let tabCell = tr.insertCell(-1);
-        // Add remove button
         const button = document.createElement('input');
-        // set the attributes.
         button.setAttribute('type', 'button');
         button.setAttribute('value', 'Remove');
         button.setAttribute('class', 'buttonRem');
-        // add button's "onclick" event.
         button.setAttribute('onclick', 'removeRow(this)');
         tabCell.appendChild(button);
       }
     }
-    // Now, add the newly created table with json data, to a container.
     let div = document.getElementById('cont');
-    div.appendChild(invTable);    // add table to a container.
+    div.appendChild(invTable);
   }
 
   // function to add new row.
   let addRow = () => {
     let invTab = document.getElementById('invTable');
-    let rowCnt = invTab.rows.length;    // get the number of rows.
-    let tr = invTab.insertRow(rowCnt); // table row.
+    let rowCnt = invTab.rows.length;
+    let tr = invTab.insertRow(rowCnt);
 
     for (let c = 0; c < col.length; c++) {
-      let td = document.createElement('td');          // table definition.
+      let td = document.createElement('td');
       td = tr.insertCell(c);
 
       if (col[c] == "Id") { 
           td.innerHTML = rowCnt;
       }
       else {
-          // the 2nd, 3rd and 4th column, will have textbox.
-          const ele = document.createElement('input');
+        // the 2nd, 3rd and 4th column, will have textbox.
+        const ele = document.createElement('input');
+        if (col[c] == "HistData" || col[c] == "ModTempS" || col[c] == "AmbTempS" || col[c] == "IRSTemp" || col[c] == "IRS" || col[c] == "EM") {
+          ele.setAttribute('type', 'checkbox');
+          ele.setAttribute('disabled', true);
+        } else {
           ele.setAttribute('type', 'text');
           if (col[c] == "Address") {
-            ele.setAttribute('value', '021F');
+            ele.setAttribute('value', '223F');
+            ele.setAttribute('maxlength', 4);
+            ele.setAttribute('size', 4);
           } else {
             ele.setAttribute('value', '');
           }
-          if (col[c] == "InvType") ele.setAttribute('list', "InvType_list");
-          td.appendChild(ele);
+          if (col[c] == "ProductNumber" || col[c] == "SerialNumber") {
+            ele.setAttribute('maxlength', 11);
+            ele.setAttribute('size', 11);
+          }
+          if (col[c] == "InvType") {
+            ele.setAttribute('maxlength', 3);
+            ele.setAttribute('size', 3);
+            ele.setAttribute('list', "InvType_list");
+            ele.addEventListener('input', checkDisabled);
+          }
+        }
+        ele.setAttribute('id',col[c]);
+        td.appendChild(ele);
       }
     }
     let tabCell = tr.insertCell(-1);
@@ -814,6 +857,26 @@ const char *CLSetJS = R"====(
           tabCell.innerHTML = r;
         }
       }
+    }
+  }
+
+  function checkDisabled(event) {
+    let row = event.target.closest('tr');
+    let type = event.target.value
+    if (type == "TLX") {
+      row.querySelector(`[id="HistData"]`).disabled = false;
+      row.querySelector(`[id="ModTempS"]`).disabled = false;
+      row.querySelector(`[id="AmbTempS"]`).disabled = false;
+      row.querySelector(`[id="IRSTemp"]`).disabled = false;
+      row.querySelector(`[id="IRS"]`).disabled = false;
+      row.querySelector(`[id="EM"]`).disabled = false;
+    } else {
+      row.querySelector(`[id="HistData"]`).disabled = true;
+      row.querySelector(`[id="ModTempS"]`).disabled = true;
+      row.querySelector(`[id="AmbTempS"]`).disabled = true;
+      row.querySelector(`[id="IRSTemp"]`).disabled = true;
+      row.querySelector(`[id="IRS"]`).disabled = true;
+      row.querySelector(`[id="EM"]`).disabled = true;
     }
   }
 
@@ -859,34 +922,24 @@ const char *CLSetJS = R"====(
       for (let cell of row.cells) {
         if (cell.childNodes[0] != undefined)
         {
-          if (cell.childNodes[0].nodeName == 'INPUT' &&  
-              cell.childNodes[0].type == 'text') {
-        
-            if (cell.childNodes[0].value != '')
-              obj[col[cell.cellIndex]] = cell.childNodes[0].value;
+          if (cell.childNodes[0].nodeName == 'INPUT' && cell.childNodes[0].type == 'text') {
+            if (cell.childNodes[0].value != '') obj[col[cell.cellIndex]] = cell.childNodes[0].value;
           } else {
-            if (col[cell.cellIndex] == "Id" && cell.innerHTML != "Id") obj[col[cell.cellIndex]] = Number(cell.innerHTML);
+            if (cell.childNodes[0].nodeName == 'INPUT' && cell.childNodes[0].type == 'checkbox') {
+              if (cell.childNodes[0].checked) {
+                obj[col[cell.cellIndex]] = 1;
+              } else {
+                obj[col[cell.cellIndex]] = 0;
+              }
+            } else {
+              if (col[cell.cellIndex] == "Id" && cell.innerHTML != "Id") obj[col[cell.cellIndex]] = Number(cell.innerHTML);
+            }
           }
         }
       }
-      //console.log(obj);
       if (Object.keys(obj).length > 0) arrValues.push(obj);
     }
     if (arrValues.length > 0) {
-      // try {
-      //   const response = await fetch('/inverters', {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify(arrValues)
-      //   });
-      //   const result = await response;
-      //   console.log("Success:", result);
-      // } catch (error) {
-      //   console.error("Error:", error);
-      // }
-
       fetch('/inverters', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1037,6 +1090,7 @@ String JsonParam()
   ParamsJson["MQTTUser"] = String(MQTTUser);
   ParamsJson["MQTTPwd"] = String(MQTTPwd);
   ParamsJson["MQTTPrefix"] = String(MQTTPrefix);
+  ParamsJson["MQTTDiscOn"] = MQTTDiscOn;
   ParamsJson["MQTTdeviceName"] = String(MQTTdeviceName);
   ParamsJson["HTTPPort"] = HTTPPort;
 
@@ -1153,6 +1207,10 @@ void HandlePostSettings(AsyncWebServerRequest *request, uint8_t *data, size_t le
     {
       MQTTPrefix = ParamsJson["MQTTPrefix"].as<String>();
     }
+    if (ParamsJson.containsKey("MQTTDiscOn"))
+    {
+      MQTTDiscOn = ParamsJson["MQTTDiscOn"];
+    }
     if (ParamsJson.containsKey("MQTTdeviceName"))
     {
       MQTTdeviceName = ParamsJson["MQTTdeviceName"].as<String>();
@@ -1241,8 +1299,8 @@ void HandleInverter(AsyncWebServerRequest *request)
 
 String JsonInverters()
 {
-
   InverterConfigElement *MemInv;
+  byte _OptionByte;
   int InvNb = InverterMemList.size();
   InvJson.clear();
 
@@ -1251,11 +1309,18 @@ String JsonInverters()
     for (int i = 0; i < InvNb; i++)
     {
       MemInv = InverterMemList.at(i);
+      _OptionByte = MemInv->OptionByte;
       InvJson[i]["Id"] = MemInv->Id;
       InvJson[i]["InvType"] = MemInv->InvType;
       InvJson[i]["ProductNumber"] = MemInv->ProductNumber;
       InvJson[i]["SerialNumber"] = MemInv->SerialNumber;
       InvJson[i]["Address"] = MemInv->Address;
+      InvJson[i]["HistData"] = ((_OptionByte & 1) == 1);
+      InvJson[i]["ModTempS"] = ((_OptionByte & 2) == 2);
+      InvJson[i]["AmbTempS"] = ((_OptionByte & 4) == 4);
+      InvJson[i]["IRSTemp"] = ((_OptionByte & 8) == 8);
+      InvJson[i]["IRS"] = ((_OptionByte & 16) == 16);
+      InvJson[i]["EM"] = ((_OptionByte & 32) == 32);
     }
   }
   String jsonString;
@@ -1278,6 +1343,13 @@ void HandlePostInverters(AsyncWebServerRequest *request, uint8_t *data, size_t l
   String _InvProductNumber;
   String _InvSerialNumber;
   String _InvAddress;
+  boolean _HistData;
+  boolean _ModTempS;
+  boolean _AmbTempS;
+  boolean _IRSTemp;
+  boolean _IRS;
+  boolean _EM;
+  byte _OptionByte = 0;
 
   InvJson.clear();
   DeserializationError error = deserializeJson(InvJson, jsonString);
@@ -1301,11 +1373,27 @@ void HandlePostInverters(AsyncWebServerRequest *request, uint8_t *data, size_t l
     _InvProductNumber = InvO["ProductNumber"].as<String>();
     _InvSerialNumber = InvO["SerialNumber"].as<String>();
     _InvAddress = InvO["Address"].as<String>();
+    if (InvO.containsKey("HistData")) { _HistData = InvO["HistData"]; } else { _HistData = false;}
+    if (InvO.containsKey("ModTempS")) { _ModTempS = InvO["ModTempS"]; } else { _ModTempS = false;}
+    if (InvO.containsKey("AmbTempS")) { _AmbTempS = InvO["AmbTempS"]; } else { _AmbTempS = false;}
+    if (InvO.containsKey("IRSTemp")) { _IRSTemp = InvO["IRSTemp"]; } else { _IRSTemp = false;}
+    if (InvO.containsKey("IRS")) { _IRS = InvO["IRS"]; } else { _IRS = false;}
+    if (InvO.containsKey("EM")) { _EM = InvO["EM"]; } else { _EM = false;}
+    _OptionByte |= (_EM << 5);
+    _OptionByte |= (_IRS << 4);
+    _OptionByte |= (_IRSTemp << 3);
+    _OptionByte |= (_AmbTempS << 2);
+    _OptionByte |= (_ModTempS << 1);
+    _OptionByte |= (_HistData << 0);
     if ((_InvType == "TLX" || _InvType == "ULX") && _InvProductNumber != "" && _InvSerialNumber != "" && _InvAddress != "")
     {
       String msg = "Inverter " + String(_InvId) + " posted";
       Serial.println(msg);
-      InverterMemList.push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress));
+      if (_InvType == "TLX" ) {
+        InverterMemList.push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress, _OptionByte));
+      } else {
+        InverterMemList.push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress));
+      }
     }
     else
     {
@@ -1334,13 +1422,7 @@ void HandleInvertersScan(AsyncWebServerRequest *request)
     response->addHeader("Location","/inverters/scan/state");
     request->send(response);
     if (!*InverterScan) {
-      xTaskCreate(
-      ScanComlynxBus, /* Task function. */
-      "scan comlynx Task", /* name of task. */
-      10000, /* Stack size of task */
-      NULL, /* parameter of the task */
-      0, /* priority of the task */
-      NULL); /* Task handle to keep track of created task */
+      xTaskCreate( ScanComlynxBus, "scan comlynx Task", 10000, NULL, 0, NULL);
     }
     found = true;
   }
@@ -1369,15 +1451,13 @@ void HandleInvertersScan(AsyncWebServerRequest *request)
 String contentInfo()
 {
   String InfoMsg = "<div class=\"boldT\"><br>General</small></div><br><div class='r'>Software Version : ";
-  InfoMsg += String(Version);
+  InfoMsg += String(Version) + " from " + String(CodeDate);
   InfoMsg += "</div><div class='r'>Compiled : ";
   InfoMsg += String(__DATE__) + " " + String(__TIME__);
   InfoMsg += "</div><div class='r'>Hostname : ";
   InfoMsg += hostname;
   InfoMsg += "</div><div class='r'> MAC Address : ";
   InfoMsg += WiFi.macAddress();
-  InfoMsg += "</div><div class='r'>Board : ";
-  InfoMsg += String(Board);
   InfoMsg += "</div><div class='r'> Chip Model : ";
   InfoMsg += ESP.getChipModel();
   InfoMsg += "</div><div class='r'> Chip Revision : ";
@@ -1386,13 +1466,11 @@ String contentInfo()
   InfoMsg += "<div style='text-align:center;padding-top:20px;' id='ResetSetButt'>";
   InfoMsg += "<input type='button' onclick='Resetsettings();' value='Reset config'>";
   InfoMsg += "<small>   Reset TCP & MQTT settings to factory</small></div>";
-
   return InfoMsg;
 }
 
 // Web page that holds configuration parameters
-void HandleSettings(AsyncWebServerRequest *request)
-{
+void HandleSettings(AsyncWebServerRequest *request) {
   String url = request->url();
   String low_url = url;
   low_url.toLowerCase();
@@ -1400,56 +1478,44 @@ void HandleSettings(AsyncWebServerRequest *request)
   String RequestedPageName = "";
   if (low_url.startsWith("/settings"))
   {
-    if (low_url == "/settings")
-    {
+    if (low_url == "/settings") {
       RequestedPageName = PageMenu.PageName[0];
     }
-    else
-    {
+    else {
       RequestedPageName = url.substring(10);
     }
-    if (RequestedPageName == "Param" && request->method() == HTTP_GET )
-    {
+    if (RequestedPageName == "Param" && request->method() == HTTP_GET ) {
       String json = JsonParam();
       request->send(200, "application/json", json);
       json = String();
       found = true;
     }
-    if (RequestedPageName == "commonJS" && request->method() == HTTP_GET)
-    {
+    if (RequestedPageName == "commonJS" && request->method() == HTTP_GET) {
       request->send(200, "application/javascript", String(commonJS));
       found = true;
     }
-    if (RequestedPageName == "TCPSetJS" && request->method() == HTTP_GET)
-    {
+    if (RequestedPageName == "TCPSetJS" && request->method() == HTTP_GET) {
       request->send(200, "application/javascript", String(TCPSetJS));
       found = true;
     }
-    if (RequestedPageName == "CLSetJS" && request->method() == HTTP_GET)
-    {
+    if (RequestedPageName == "CLSetJS" && request->method() == HTTP_GET) {
       request->send(200, "application/javascript", String(CLSetJS));
       found = true;
     }
-    if (RequestedPageName == "MQTTSetJS" && request->method() == HTTP_GET)
-    {
+    if (RequestedPageName == "MQTTSetJS" && request->method() == HTTP_GET) {
       request->send(200, "application/javascript", String(MQTTSetJS));
       found = true;
     }
     RequestedPageName.toLowerCase();
-    for (int i = 0; i < MPAGE_ENUMS; i++)
-    {
-      if (RequestedPageName == PageMenu.PageName[i])
-      {
+    for (int i = 0; i < MPAGE_ENUMS; i++) {
+      if (RequestedPageName == PageMenu.PageName[i]) {
         found = true;
         String msg = String(HTMLCommonHead);
-        if (PageMenu.ScriptName[i] != "")
-        {
+        if (PageMenu.ScriptName[i] != "") {
           msg += "<script src=" + PageMenu.ScriptName[i] + "></script>";
           msg += "</head>";
           msg += "<body onload=" + PageMenu.FunctionName[i] + ";>";
-        }
-        else
-        {
+        } else {
           msg += "</head>";
           msg += "<body>";
         }
@@ -1457,50 +1523,38 @@ void HandleSettings(AsyncWebServerRequest *request)
         msg += "<div class=w>";
         msg += "<div class=m>";
         // Left Menu
-        for (byte j = 0; j < MPAGE_ENUMS; j++)
-        {
+        for (byte j = 0; j < MPAGE_ENUMS; j++) {
           msg += "<h4 ";
-          if ((j) == i)
-          {
+          if ((j) == i) {
             msg += " style=background-color:#FF6600";
           }
           msg += "><a href=/settings/" + PageMenu.PageName[j] + ">" + PageMenu.MenuName[j] + "</a></h4>";
         }
         msg += "</div><div class=c><h4>" + PageMenu.MenuName[i] + "</h4><form method=post>";
 
-        //   PLACE FUNCTIONS PROVIDING CONTENT HERE
-
-        switch (i)
-        {
+        switch (i) {
         case SysInfo:
           msg += contentInfo();
           break;
-        case WifiSet:
-        {
+        case WifiSet: {
           String NewSsid = "";
           String NewPassword;
-          if (request->hasParam("ssid", true))
-          {
+          if (request->hasParam("ssid", true)) {
             NewSsid = request->getParam("ssid", true)->value();
             NewSsid.trim();
           }
-          if (request->hasParam("wifipassword", true))
-          {
+          if (request->hasParam("wifipassword", true)) {
             NewPassword = request->getParam("wifipassword", true)->value();
             NewPassword.trim();
           }
           Serial.println(NewSsid);
           Serial.println(NewPassword);
-          if (NewSsid.length() == 0)
-          {
+          if (NewSsid.length() == 0) {
             msg += String(HTMLContentWifi);
-            if (SSID != "")
-            {
+            if (SSID != "") {
               msg.replace("name='ssid' id='ssid'", "name='ssid' value='" + SSID + "' id='ssid'");
             }
-          }
-          else
-          {
+          } else {
             msg += "<div class='boldT'><br>switch to wifi ! " + NewSsid + " </div>";
             SSID = NewSsid;
             SECRET_WIFI_PSWD = NewPassword;
@@ -1526,24 +1580,21 @@ void HandleSettings(AsyncWebServerRequest *request)
         request->send(200, "text/html", msg);
       }
     }
-    if (!found)
-    {
+    if (!found) {
       String msg = "Page not found \n\n";
       request->send(404, "text/plain", msg);
     }
   }
 }
 
-void HandleIcon(AsyncWebServerRequest *request)
-{
+void HandleIcon(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse_P(200, "image/x-icon", favicon_ico_gz, favicon_ico_gz_len);
   response->addHeader("Content-Encoding", "gzip");
   request->send(response);
 }
 
 // Handle inverter REST API call
-void HandleRESTAPI(AsyncWebServerRequest *request)
-{
+void HandleRESTAPI(AsyncWebServerRequest *request) {
   String url = request->url();
   int _InvId;
   int InvVecIdx;
@@ -1620,7 +1671,7 @@ void HandleRESTAPI(AsyncWebServerRequest *request)
   }
 }
 
-// All values from TLX in one json respons without units
+// All values from inverter in one json respons without units
 void CreateJsonAll(void)
 {
   jsonDocument.clear();
@@ -1654,7 +1705,7 @@ void CreateJsonTxt(const char *tag, const char *value)
   serializeJson(jsonDocument, jsonbuffer);
 }
 
-// Send json object of requested parameter/value. See DanfossTLX::ParName for valid names
+// Send json object of requested parameter/value. See inverter constructor for valid names
 void ReturnInvMeasValue(AsyncWebServerRequest *request, String _APIParam)
 {
   bool found = false;
@@ -1701,8 +1752,6 @@ void Init_Webserver()
   server->on("/inverters", HTTP_GET, HandleGetInverters);
   server->on("/settings/*", HandleSettings);
   server->on("/settings", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, HandlePostSettings);
-  // server->on("/settings/reset", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, HandleResetSettings);
-  // server->on("/settings", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, HandleUpdateSettings);
   server->on("/settings", HTTP_GET, HandleSettings);
   server->on("/gw", HTTP_POST, HandleGW);
   server->on("/favicon.ico", HTTP_GET, HandleIcon);
@@ -1711,7 +1760,7 @@ void Init_Webserver()
     server->on("/api/*", HandleRESTAPI);
   }
   server->onNotFound([](AsyncWebServerRequest *request)
-                     { String msg = "Page not found \n\n"; request->send(404, "text/plain", msg);});
+    { String msg = "Page not found \n\n"; request->send(404, "text/plain", msg);});
   server->begin();
   Serial.println("HTTP server started");
 }

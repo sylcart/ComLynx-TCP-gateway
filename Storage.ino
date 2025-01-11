@@ -1,6 +1,5 @@
 /*
     Name: Storage
-    
     Used to store config and inverters in eprom
     
 */ 
@@ -12,7 +11,6 @@ Preferences preferences;
 
 void SaveConfigParameters(void) {
   preferences.begin("Settings", false);
-
   preferences.putBool("dhcp", dhcpOn); 
   preferences.putULong("StaticIP", (uint32_t) StaticIP);
   preferences.putULong("Gateway", (uint32_t) Gateway);
@@ -25,21 +23,22 @@ void SaveConfigParameters(void) {
   preferences.putUInt("MQTTPort", MQTTPort);
   preferences.putString("MQTTUser", MQTTUser); 
   preferences.putString("MQTTPwd", MQTTPwd); 
-  preferences.putString("MQTTPrefix", MQTTPrefix); 
+  preferences.putString("MQTTPrefix", MQTTPrefix);
+  preferences.putBool("MQTTDiscOn", MQTTDiscOn);
   preferences.putString("MQTTdeviceName", MQTTdeviceName);
   preferences.putUInt("HTTPPort", HTTPPort);
-
-  Serial.println("All config settings saved to eprom");
-
+  String msg = "All config settings saved to eprom";
+  Serial.println(msg);
+  Debug.println(msg);
   preferences.end();
 }
 
 void ResetConfigParameters(void) {
   preferences.begin("Settings", false);
   preferences.clear();
-
-  Serial.println("settings eprom deleted");
-
+  String msg = "settings eprom deleted";
+  Serial.println(msg);
+  Debug.println(msg);
   preferences.end();
 }
 
@@ -57,11 +56,13 @@ void GetConfigParameters(void) {
   MQTTPort = preferences.getUInt("MQTTPort", 1883);
   MQTTUser = preferences.getString("MQTTUser", "User"); 
   MQTTPwd = preferences.getString("MQTTPwd", "password"); 
-  MQTTPrefix = preferences.getString("MQTTPrefix", "homeassistant"); 
+  MQTTPrefix = preferences.getString("MQTTPrefix", "homeassistant");
+  MQTTDiscOn = preferences.getBool("MQTTDiscOn", false);
   MQTTdeviceName = preferences.getString("MQTTdeviceName", hostname);
   HTTPPort = preferences.getUInt("HTTPPort", 80);
-
-  Serial.println("All config settings retrieved from eprom");
+  String msg = "All config settings retrieved from eprom";
+  Serial.println(msg);
+  Debug.println(msg);
 
   preferences.end();
 }
@@ -70,9 +71,9 @@ void GetWifiParameters(void) {
   preferences.begin("Wificredentials", false);
   SSID = preferences.getString("ssid", ""); 
   SECRET_WIFI_PSWD = preferences.getString("password", "");
-
-  Serial.println("Network Credentials retrieved in eprom");
-
+  String msg = "Network Credentials retrieved in eprom";
+  Serial.println(msg);
+  Debug.println(msg);
   preferences.end();
 }
 
@@ -81,7 +82,9 @@ void SaveWifiParameters(void) {
   preferences.putString("ssid", SSID); 
   preferences.putString("password", SECRET_WIFI_PSWD);
 
-  Serial.println("Network Credentials saved in eprom");
+  String msg = "Network Credentials saved in eprom";
+  Serial.println(msg);
+  Debug.println(msg);
 
   preferences.end();
 }
@@ -92,6 +95,7 @@ void GetInvertersFromEprom(std::vector<InverterConfigElement*> *_InverterCEList)
   String _InvProductNumber;
   String _InvSerialNumber;
   String _InvAddress;
+  byte   _OptionByte = 0;
   const char* prefName;
   _InverterCEList->clear();
   preferences.begin("Inverters", false);
@@ -107,15 +111,19 @@ void GetInvertersFromEprom(std::vector<InverterConfigElement*> *_InverterCEList)
     _InvSerialNumber = preferences.getString(prefName, "");
     prefName = "InvAd" + _InvId;
     _InvAddress = preferences.getString(prefName, "");
+    prefName = "IOptB" + _InvId;
+    preferences.getBytes(prefName, &_OptionByte, sizeof(_OptionByte));
     if ((_InvType == "TLX" || _InvType == "ULX") && _InvProductNumber != "" && _InvSerialNumber != "" && _InvAddress != "") {
       String msg = "Inverter " + String(_InvId) + " restored from eeprom";
       Serial.println(msg);
-      _InverterCEList->push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress));
+      Debug.println(msg);
+      _InverterCEList->push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress, _OptionByte));
     } else {
-      Serial.println("Invalid inverters parameters preference will be cleared");
+      String msg = "Invalid inverters parameters preference will be cleared";
+      Serial.println(msg);
+      Debug.println(msg);
       preferences.clear();
     }
-
   }
   preferences.end();
 }
@@ -142,8 +150,13 @@ void SaveInvertersToEprom(std::vector<InverterConfigElement*> *_InverterCEList) 
       preferences.putString(prefName, MemInv->SerialNumber);
       prefName = "InvAd" + _InvId;
       preferences.putString(prefName, MemInv->Address);
+      if (MemInv->InvType == "TLX" && MemInv->OptionByte != 0) {
+        prefName = "IOptB" + _InvId;
+        preferences.putBytes(prefName, &MemInv->OptionByte, sizeof(MemInv->OptionByte) );
+      }
       String msg = "Inverter " + String(_InvId) + " saved to eeprom";
       Serial.println(msg);
+      Debug.println(msg);
     }
   }
   preferences.end();

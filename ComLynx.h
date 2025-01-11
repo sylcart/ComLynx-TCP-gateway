@@ -12,7 +12,6 @@ class ComLynx {
     ComLynx(const byte RXD2, const byte TXD2);
     long    GetInvData(const String InvAddr, String GetLocal);
     String  GetInvString(const String InvAddr, String GetLocal);
-    void    FindInvAddr(void);
     void    DiscoverInverters(std::vector<InverterConfigElement*> *_InverterList, boolean *Scanning, float *ScanPerc);
     const long NOTVALID = 0x0f0f0f0f;
 

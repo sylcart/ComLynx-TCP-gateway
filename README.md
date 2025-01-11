@@ -1,6 +1,6 @@
 # Comlynx TCP gateway
 
-Revision 0.3
+Revision 0.4
 
 This program is a gateway beetween Dansfoss Inverters (TLX and ULX) and TCP networks.
   It use the Danfoss comlynx protocol (over RS485) to query the inverters parameters.
@@ -38,7 +38,7 @@ Each parameter can be queried separately (see DanfossInverter.h for parameters l
 To get all parameters of an inverter in one call. It is possible to call the All API wich return all paramters in on json document. See configuration.yaml for all rest sensors
 
     rest:
-      - resource: http://[IP-Address]/api/[inverter Id]//All
+      - resource: http://[IP-Address]/api/[inverter Id]/All
         sensor:
           # Info
           - name: "TLX Operation Mode"

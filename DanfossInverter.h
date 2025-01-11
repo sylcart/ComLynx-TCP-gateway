@@ -10,13 +10,10 @@
 class DanfossInverter {
   public:
 
-    DanfossInverter(ComLynx *ComlynxInv);
+    DanfossInverter(ComLynx *ComlynxInv, const String ComlynxAddr = "", String *InvSN = nullptr, String *InvPN = nullptr);
     void GetStatus(void);
     void GetName(void);
     void SetSN(String *_SerialNumber);
-    // void PrintAll(void);
-    // String LongString(Par_e ParEnum );
-    // String MeasString(Par_e ParEnum);
     String PrintType(void);
     void GetAllParameters(void);
     void GetRollingParameters(void);
@@ -32,7 +29,6 @@ class DanfossInverter {
     String PrintUnitParameter(int index);
     float PrintMeasParameter(int index);
     String PrintFormatedMeasParameter(int index);
-    // virtual bool SanityCheck(int i) = 0;
 
   protected:
     String RS485_Addr      = "FFFF";  // Inverter Adress - as reported by findaddr
@@ -62,19 +58,23 @@ class DanfossInverter {
     String OpModeTxt = ">>NotInitialized<<";
     String Name = ">>NotInitialized<<";
     String Type = "Undefined";
+    boolean HistData = false; // historical data enabled (will not be sended via MQTT ony rest API call) (TLX only)
+    boolean ModTempS = false; // module temperature sensor (TLX only)
+    boolean AmbTempS = false; // ambiant temperature sensor (TLX only)
+    boolean IRSTemp  = false; // Irradiation sensor temperature (TLX only)
+    boolean IRS      = false; // Irradiation sensor (TLX only)
+    boolean EM       = false; // Energy Meter (TLX only)
     int ParamIndex = 0;
 };
 
 class DanfossTLX: public DanfossInverter {
   public:
-    DanfossTLX(ComLynx *ComlynxInv, const String ComlynxAddr) ;
-    DanfossTLX(ComLynx *ComlynxInv, const String ComlynxAddr, String *InvSN, String *InvPN);
+    DanfossTLX(ComLynx *ComlynxInv, const String ComlynxAddr = "", String *InvSN = nullptr, String *InvPN = nullptr, byte *OptionByte = nullptr);
 };
 
 class DanfossULX : public DanfossInverter {
   public:
-    DanfossULX(ComLynx *ComlynxInv, const String ComlynxAddr);
-    DanfossULX(ComLynx *ComlynxInv, const String ComlynxAddr, String *InvSN, String *InvPN);
+    DanfossULX(ComLynx *ComlynxInv, const String ComlynxAddr = "", String *InvSN = nullptr, String *InvPN = nullptr);
 };
 
 #endif

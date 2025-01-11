@@ -15,9 +15,7 @@ long ComLynx::GetInvData(const String InvAddr, String GetLocal){
   if (RXData.length() >= 36+2 && RXData.substring(14, 22) == CAN_Reply_ok){
     return HexToDec(RXData.substring(36, 36 + 2) + RXData.substring(34, 34 + 2) + RXData.substring(32, 32 + 2) + RXData.substring(30, 30 + 2));
   } else {
-    if(RXData.length()>0){
-      Serial.println("ERR RX:" + String(RXData.length()) + " " );
-    }
+    if (RXData.length()>0) Serial.println("ERR RX:" + String(RXData.length()) + " ");
   }
   return NOTVALID;
 }
@@ -33,9 +31,7 @@ String ComLynx::GetInvString(const String InvAddr, String GetLocal){
     }
     return RXReturn;
   } else {
-    if(RXData.length()>0){
-      Serial.println("ERR RX:" + String(RXData.length()) + " " );
-    }
+    if (RXData.length()>0) Serial.println("ERR RX:" + String(RXData.length()) + " ");
   }
   return "";
 }
@@ -50,11 +46,9 @@ String ComLynx::RX_INV(int RX_LENGTH) {
   while(Serial2.available() < RX_LENGTH){
     delay(2);
     unsigned long t = millis() - TimeNow;
-    if(t > RX_TIMEOUT){
+    if (t > RX_TIMEOUT) {
       Serial.println("ERR RX Timeout:" + String(t) + " ms.");
-      if(Serial2.available() > 0){
-        Serial.println(String(Serial2.available()) + " bytes available for reading."); 
-      }
+      if (Serial2.available() > 0) Serial.println(String(Serial2.available()) + " bytes available for reading.");
       break;
     }
   }
@@ -82,15 +76,6 @@ String ComLynx::RX_INV(int RX_LENGTH) {
     }
   }
   return RXData;
-}
-
-void ComLynx::FindInvAddr(void) 
-{
-  String RS485_DstAddr;
-  delay(1000);
-  TX_INV("FFFF",GetAddr);
-  RS485_DstAddr = RX_INV(22).substring(6, 6 + 4);
-  Serial.println("RS485_DstAddr               :"+RS485_DstAddr);
 }
 
 void ComLynx::DiscoverInverters(std::vector<InverterConfigElement*> *_InverterList, boolean *Scanning, float *ScanPerc)
@@ -178,7 +163,7 @@ void ComLynx::DiscoverInverters(std::vector<InverterConfigElement*> *_InverterLi
       vTaskDelay(10);
     }
   } else {
-    Serial.println("Bus scanned without success no inverter found ! ");
+    Serial.println("Bus scanned without success no inverter found !");
   }
   *Scanning = false;
   *ScanPerc = 100;
