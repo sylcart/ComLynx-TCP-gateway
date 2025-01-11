@@ -93,3 +93,29 @@ By using RJ45 connectors on inverter's side, color code may vary, I respected th
 Important is to cross the data wire between inverters and R411A01.
 
 Pay attention to use a 3.3V R411A01, it exists in both 3.3V and 5V. If using a 5V, schema should be modified to use the 5V pin of the ESP32.
+
+# WebInterface:
+
+root webpage is basic to redirect to other pages :
+<img  alt="root page" src="/doc/Webpages/root page.png">
+
+system page give some general informations :
+<img  alt="root page" src="/doc/Webpages/system info page.png">
+
+use this page to configure wifi credentials :
+<img  alt="root page" src="/doc/Webpages/wifi configuration page.png">
+
+network settings can be configured on this page (here you can enable REST API) :
+<img  alt="root page" src="/doc/Webpages/network settings page.png">
+
+Discover your inverters (by scanning RS485 network or manually) and comlynx parameters on this page :
+<img  alt="root page" src="/doc/Webpages/comlynx configuration page.png">
+
+Enable MQTT and home assistant MQTT auto-discovery on this page :
+<img  alt="root page" src="/doc/Webpages/MQTT configuration page.png">
+
+Enable MQTT and home assistant MQTT auto-discovery on this page :
+<img  alt="root page" src="/doc/Webpages/MQTT configuration page.png">
+
+View each configured inverter on this page :
+<img  alt="root page" src="/doc/Webpages/All inverter parameters page.png">

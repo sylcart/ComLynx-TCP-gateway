@@ -248,9 +248,9 @@ const char *HTMLInverterBody = R"====(
         <table>
           <tr>
             <th>Description</th>
-            <th>Value</th>S
+            <th>Value</th>
             <th>Unit</th>
-            <th>Indeks</th>
+            <th>Parameter name</th>
           </tr>
 )====";
 
@@ -1243,54 +1243,39 @@ void HandleInverter(AsyncWebServerRequest *request)
   String Requested = "";
   String msg = String(HTMLInverterBody);
   int InvListSize = mypInverterList.size();
-  if (url.startsWith("/inverter/"))
-  {
-    if (InvListSize >= 1)
-    {
+  if (url.startsWith("/inverter/")) {
+    if (InvListSize >= 1) {
       Requested = url.substring(10);
-      Serial.println(Requested);
-      Serial.println(Requested.length());
-      if (Requested.length() >= 1)
-      {
+      if (Requested.length() >= 1) {
         _InvId = Requested.toInt();
-        Serial.println(_InvId);
-        Serial.println("Inverter id in GET");
-        if (0 < _InvId && _InvId <= InvListSize)
-        {
+        if (0 < _InvId && _InvId <= InvListSize) {
           myInv = mypInverterList.at(_InvId - 1);
-          if (myInv->PrintProductNumber().c_str()[0] != 0)
-          {
+          if (myInv->PrintProductNumber().c_str()[0] != 0) {
             msg += "<tr><td>Product Number</td><td>" + myInv->PrintProductNumber() + "</td><td></td><td></td></tr>";
           }
-          if (myInv->PrintSN().c_str()[0] != 0)
-          {
+          if (myInv->PrintSN().c_str()[0] != 0) {
             msg += "<tr><td>Serial Number</td><td>" + myInv->PrintSN() + "</td><td></td><td></td></tr>";
           }
-          if (myInv->PrintOpMode().c_str()[0] != 0)
-          {
+          if (myInv->PrintOpMode().c_str()[0] != 0) {
             msg += "<tr><td>Operation mode</td><td>" + myInv->PrintOpMode() + "</td><td></td><td></td></tr>";
           }
-          for (int i = 0; i < myInv->PrintParametersCount(); i++)
-          {
+          for (int i = 0; i < myInv->PrintParametersCount(); i++) {
             msg += "<tr><td>" + myInv->PrintNameParameter(i) + "</td><td>" + myInv->PrintFormatedMeasParameter(i) + "</td><td>" + myInv->PrintUnitParameter(i) + "</td><td>" + myInv->PrintParNameParameter(i) + "</td></tr>";
           }
           msg += "</body></html>";
           request->send(200, "text/html", msg);
         }
-        else
-        {
+        else {
           String msg = "No inverter with id : " + String(_InvId) + " found, please check your inverter configuration !";
           request->send(404, "text/plain", msg);
         }
       }
-      else
-      {
+      else {
         String msg = "No inverter id given, please send inverter id after /inverter ex : /inverter/1";
         request->send(404, "text/plain", msg);
       }
     }
-    else
-    {
+    else {
       String msg = "No inverter configured, please configure inverter first !";
       request->send(404, "text/plain", msg);
     }
