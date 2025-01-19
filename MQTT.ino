@@ -6,15 +6,15 @@ const char *SSR = "sensor"; // all inverters parameter's types will be : sensor
 
 void MQTTconnect() {  
   if (!MQTTClient.connected()) {  // Test if not already connected
-    Serial.println("Connecting to MQTT Server ...");
-    MQTTClient.setHost(MQTTIP, MQTTPort);
+    Serial.println("Connecting to MQTT Broker ...");
+    MQTTClient.setHost(MQTTBroker.c_str(), MQTTPort);
     MQTTClient.onMessage(messageReceived);
     if (MQTTClient.connect(MQTTdeviceName.c_str(), MQTTUser.c_str(), MQTTPwd.c_str())) {
       Serial.println(MQTTdeviceName + " connected");
-      Debug.println(MQTTdeviceName + " connected");
+      //Debug.println(MQTTdeviceName + " connected");
     } else {
       Serial.println("connection to MQTT failed.");
-      Debug.println("connection to MQTT failed.");
+      //Debug.println("connection to MQTT failed.");
       return;
     }
   }
@@ -31,7 +31,7 @@ void SendMQTT(DanfossInverter *MQTTInverter) {
 void messageReceived(String &topic, String &payload) {
   Serial.println("incoming: " + topic + " - " + payload);
   Serial.println("-------Unused function, broker send a mqtt message-----");
-  Debug.println("-------Unused function, broker send a mqtt message-----");
+  //Debug.println("-------Unused function, broker send a mqtt message-----");
 }
 
 void MQTTDiscovery(DanfossInverter *MQTTInverter) {  
@@ -88,7 +88,7 @@ void sendMQTTDiscoveryMsg(DanfossInverter *MQTTInverter) {
                       }else{
                         if (MQTTInverter->PrintParNameParameter(i) != "OpMode") {
                           Serial.println("Unknown UNit please check parameter : " + MQTTInverter->PrintNameParameter(i));
-                          Debug.println("Unknown UNit please check parameter : " + MQTTInverter->PrintNameParameter(i));
+                          //Debug.println("Unknown UNit please check parameter : " + MQTTInverter->PrintNameParameter(i));
                         }
                         checked = false;
                       }
@@ -109,7 +109,7 @@ void sendMQTTDiscoveryMsg(DanfossInverter *MQTTInverter) {
       }
     }
     Serial.println("Auto-Discovery parameters published !");
-    Debug.println("Auto-Discovery parameters published !");
+    //Debug.println("Auto-Discovery parameters published !");
   }
 }
 

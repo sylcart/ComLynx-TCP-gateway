@@ -6,6 +6,7 @@
 
 #include "Arduino.h"
 #include "ComLynx.h"
+#include <vector>
 
 class DanfossInverter {
   public:
@@ -37,20 +38,20 @@ class DanfossInverter {
     String NameModuleID    = "00";    // Module ID to get name
     ComLynx *_ComlynxInv;
 
-    String *INV_modes_txt;
-    int *NbINV_power_modes;
+    std::vector<String> INV_modes_txt;
+    int NbINV_power_modes;
 
     struct Par_s                                                                                  
     {                                                                                             
-      String *ParName;
-      String *Name;
-      String *Cmd;
-      String *Module;
-      float  *Conv;
-      String *Unit;
-      float  *Meas;
-      long   *Raw;
-      int    *NbParam;
+      std::vector<String> ParName;
+      std::vector<String> Name;
+      std::vector<String> Cmd;
+      std::vector<String> Module;
+      std::vector<float> Conv;
+      std::vector<String> Unit;
+      std::vector<float> Meas;
+      std::vector<long> Raw;
+      int    NbParam;
     }InvParamList;
 
     String ProductNumber = ">>NotInitialized<<";  

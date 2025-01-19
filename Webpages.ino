@@ -250,7 +250,7 @@ const char *HTMLInverterBody = R"====(
             <th>Description</th>
             <th>Value</th>
             <th>Unit</th>
-            <th>Parameter name</th>
+            <th>Index name</th>
           </tr>
 )====";
 
@@ -402,9 +402,14 @@ const char *HTMLContentMQTT = R"====(
         <input type='checkbox' name='MQTTOn' id='MQTTOn' style='width:25px;' onclick='checkDisabled();'>
       </div>
       <div class='r'>
-        <label for='MQTTIP'>MQTT broker IP address : </label>
-        <input type='text' name='MQTTIP' id='MQTTIP' >
+        <label for='MQTTBroker'>MQTT broker's URL or IP address : </label>
+        <input type='text' name='MQTTBroker' id='MQTTBroker' >
       </div>
+      <div class='r'>
+        <label for='MQTTTLS'>MQTT use TLS protocol : </label>
+        <input type='checkbox' name='MQTTTLS' id='MQTTTLS' style='width:25px;' onclick='ChangePort();'>
+      </div>
+      <div> Please note that if using TLS encryption, broker's certificate will be trusted without verification, Man In the Middle attack will be possible !</div>
       <div class='r'>
         <label for='MQTTPort'> port : </label>
         <input type='number' name='MQTTPort' id='MQTTPort' >
@@ -544,7 +549,8 @@ const char *MQTTSetJS = R"====(
       if (this.readyState == 4 && this.status == 200) {
         var myObj = JSON.parse(this.responseText);
         GID("MQTTOn").checked = myObj.MQTTOn;
-        GID("MQTTIP").value = myObj.MQTTIP;
+        GID("MQTTBroker").value = myObj.MQTTBroker;
+        GID("MQTTTLS").checked = myObj.MQTTTLS;
         GID("MQTTPort").value = myObj.MQTTPort;
         GID("MQTTUser").value = myObj.MQTTUser;
         GID("MQTTPwd").value = myObj.MQTTPwd;
@@ -560,7 +566,8 @@ const char *MQTTSetJS = R"====(
 
   function SendValues(){
     var MQTTOn = GID("MQTTOn").checked;
-    var MQTTIP = GID("MQTTIP").value;
+    var MQTTBroker = GID("MQTTBroker").value;
+    var MQTTTLS = GID("MQTTTLS").checked;
     var MQTTPort = GID("MQTTPort").value;
     var MQTTUser = GID("MQTTUser").value.trim();
     var MQTTPwd = GID("MQTTPwd").value.trim();
@@ -570,7 +577,8 @@ const char *MQTTSetJS = R"====(
          
     var jsonFormInfo = JSON.stringify({
         MQTTOn:MQTTOn,
-        MQTTIP:MQTTIP,
+        MQTTBroker:MQTTBroker,
+        MQTTTLS:MQTTTLS,
         MQTTPort:MQTTPort,
         MQTTUser:MQTTUser,
         MQTTPwd:MQTTPwd,
@@ -579,28 +587,35 @@ const char *MQTTSetJS = R"====(
         MQTTdeviceName:MQTTdeviceName
     });
 
-    if ( checkIP("MQTTIP") ){
-      var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() { 
-          if (this.readyState == 4 && this.status == 200) {
-            var retour=this.responseText;
-            location.reload();
-          }         
-        };
-        xhttp.open('POST', '/settings' , true);
-        xhttp.setRequestHeader('Content-Type', 'application/json');
-        xhttp.send(jsonFormInfo);
-    }
+    var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() { 
+        if (this.readyState == 4 && this.status == 200) {
+          var retour=this.responseText;
+          location.reload();
+        }         
+      };
+      xhttp.open('POST', '/settings' , true);
+      xhttp.setRequestHeader('Content-Type', 'application/json');
+      xhttp.send(jsonFormInfo);
   }
 
   function checkDisabled(){
-    GID("MQTTIP").disabled=!GID("MQTTOn").checked;
+    GID("MQTTBroker").disabled=!GID("MQTTOn").checked;
+    GID("MQTTTLS").disabled=!GID("MQTTOn").checked;
     GID("MQTTPort").disabled=!GID("MQTTOn").checked;
     GID("MQTTUser").disabled=!GID("MQTTOn").checked;
     GID("MQTTPwd").disabled=!GID("MQTTOn").checked; 
     GID("MQTTPrefix").disabled=!GID("MQTTOn").checked;
     GID("MQTTDiscOn").disabled=!GID("MQTTOn").checked;
     GID("MQTTdeviceName").disabled=!GID("MQTTOn").checked; 
+  }
+
+  function ChangePort(){
+    if (GID("MQTTTLS").checked){
+      GID("MQTTPort").value=8883;
+    } else {
+      GID("MQTTPort").value=1883;
+    }
   }
 )====";
 
@@ -1085,7 +1100,8 @@ String JsonParam()
   ParamsJson["MQTTOn"] = MQTTOn;
   ParamsJson["RestAPIOn"] = RestAPIOn;
   ParamsJson["ClxInterval"] = ClxInterval;
-  ParamsJson["MQTTIP"] = MQTTIP;
+  ParamsJson["MQTTBroker"] = MQTTBroker;
+  ParamsJson["MQTTTLS"] = MQTTTLS;
   ParamsJson["MQTTPort"] = MQTTPort;
   ParamsJson["MQTTUser"] = String(MQTTUser);
   ParamsJson["MQTTPwd"] = String(MQTTPwd);
@@ -1183,13 +1199,13 @@ void HandlePostSettings(AsyncWebServerRequest *request, uint8_t *data, size_t le
     {
       ClxInterval = (unsigned long)ParamsJson["ClxInterval"];
     }
-    if (ParamsJson.containsKey("MQTTIP"))
+    if (ParamsJson.containsKey("MQTTTLS"))
     {
-      ip = ParamsJson["MQTTIP"];
-      if (ip != "")
-      {
-        MQTTIP.fromString(ip);
-      }
+      MQTTTLS = ParamsJson["MQTTTLS"];
+    }
+    if (ParamsJson.containsKey("MQTTBroker"))
+    {
+      MQTTBroker = ParamsJson["MQTTBroker"].as<String>();
     }
     if (ParamsJson.containsKey("MQTTPort"))
     {

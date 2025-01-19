@@ -19,7 +19,8 @@ void SaveConfigParameters(void) {
   preferences.putBool("mqtt", MQTTOn);
   preferences.putBool("RestAPI", RestAPIOn);
   preferences.putULong("ClxInterval", ClxInterval);
-  preferences.putULong("MQTTIP", (uint32_t) MQTTIP);
+  preferences.putBool("mqtttls", MQTTTLS);
+  preferences.putString("MQTTBN", MQTTBroker);
   preferences.putUInt("MQTTPort", MQTTPort);
   preferences.putString("MQTTUser", MQTTUser); 
   preferences.putString("MQTTPwd", MQTTPwd); 
@@ -29,7 +30,7 @@ void SaveConfigParameters(void) {
   preferences.putUInt("HTTPPort", HTTPPort);
   String msg = "All config settings saved to eprom";
   Serial.println(msg);
-  Debug.println(msg);
+  //Debug.println(msg);
   preferences.end();
 }
 
@@ -38,7 +39,7 @@ void ResetConfigParameters(void) {
   preferences.clear();
   String msg = "settings eprom deleted";
   Serial.println(msg);
-  Debug.println(msg);
+  //Debug.println(msg);
   preferences.end();
 }
 
@@ -52,7 +53,8 @@ void GetConfigParameters(void) {
   MQTTOn = preferences.getBool("mqtt", false);
   RestAPIOn = preferences.getBool("RestAPI", false);
   ClxInterval = preferences.getULong("ClxInterval", 30000);
-  MQTTIP = preferences.getULong("MQTTIP", 302098624);  // 192.168.1.18
+  MQTTTLS = preferences.getBool("mqtttls", false);
+  MQTTBroker = preferences.getString("MQTTBN", "192.168.1.29");  // 192.168.1.18 = 302098624
   MQTTPort = preferences.getUInt("MQTTPort", 1883);
   MQTTUser = preferences.getString("MQTTUser", "User"); 
   MQTTPwd = preferences.getString("MQTTPwd", "password"); 
@@ -62,7 +64,7 @@ void GetConfigParameters(void) {
   HTTPPort = preferences.getUInt("HTTPPort", 80);
   String msg = "All config settings retrieved from eprom";
   Serial.println(msg);
-  Debug.println(msg);
+  //Debug.println(msg);
 
   preferences.end();
 }
@@ -73,7 +75,7 @@ void GetWifiParameters(void) {
   SECRET_WIFI_PSWD = preferences.getString("password", "");
   String msg = "Network Credentials retrieved in eprom";
   Serial.println(msg);
-  Debug.println(msg);
+  //Debug.println(msg);
   preferences.end();
 }
 
@@ -84,7 +86,7 @@ void SaveWifiParameters(void) {
 
   String msg = "Network Credentials saved in eprom";
   Serial.println(msg);
-  Debug.println(msg);
+  //Debug.println(msg);
 
   preferences.end();
 }
@@ -116,12 +118,12 @@ void GetInvertersFromEprom(std::vector<InverterConfigElement*> *_InverterCEList)
     if ((_InvType == "TLX" || _InvType == "ULX") && _InvProductNumber != "" && _InvSerialNumber != "" && _InvAddress != "") {
       String msg = "Inverter " + String(_InvId) + " restored from eeprom";
       Serial.println(msg);
-      Debug.println(msg);
+      //Debug.println(msg);
       _InverterCEList->push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress, _OptionByte));
     } else {
       String msg = "Invalid inverters parameters preference will be cleared";
       Serial.println(msg);
-      Debug.println(msg);
+      //Debug.println(msg);
       preferences.clear();
     }
   }
@@ -156,7 +158,7 @@ void SaveInvertersToEprom(std::vector<InverterConfigElement*> *_InverterCEList) 
       }
       String msg = "Inverter " + String(_InvId) + " saved to eeprom";
       Serial.println(msg);
-      Debug.println(msg);
+      //Debug.println(msg);
     }
   }
   preferences.end();

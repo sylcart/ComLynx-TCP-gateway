@@ -80,93 +80,107 @@ String ComLynx::RX_INV(int RX_LENGTH) {
 
 void ComLynx::DiscoverInverters(std::vector<InverterConfigElement*> *_InverterList, boolean *Scanning, float *ScanPerc)
 {
-  String StrNet;
-  String StrSubnet;
-  String StrAdd;
-  String PingReply;
-  String NodeInformation;
-  String NodeProductNumber;
-  String NodeSerialNumber;
-  String RS485_DstAddr;
-  int InvId = 1;
-  int idx;
-  const int MaxInvCount = 64; // see comlynx documentation
-  *Scanning = true;
-  *ScanPerc = 0;
-  Serial.println("Starting scanning bus.");
-  TX_INV("","FFFF" + GetAddr);
-  if (RX_INV(12) != "") {
-    for (size_t i = 1; i < 15; i++) // slave networks are from 1 to 14
-    {
-      Serial.println("Scanning slave network : " + String(i));
+    String StrNet, StrSubnet, StrAdd, PingReply, NodeInformation, NodeProductNumber, NodeSerialNumber, RS485_DstAddr;
+    int InvId = 1;
+    const int MaxInvCount = 64; // see comlynx documentation
+    *Scanning = true;
+    *ScanPerc = 0;
+    Serial.println("Starting scanning bus.");
+    TX_INV("", "FFFF" + GetAddr);
 
-      StrNet = String(i, HEX);
-      TX_INV("",StrNet + "FFF" + GetAddr);
-      if (RX_INV(12) != "") {
-        for (size_t j = 0; j < 15; j++) // Subnet are from 0 to 14
-        {
-          Serial.println("Scanning subnet : " + String(j));
-          StrSubnet = String(j, HEX);
-          TX_INV("",StrNet + StrSubnet + "FF" + GetAddr);
-          if (RX_INV(12) != "") {
-            for (size_t k = 0; k < 255; k++) // nodes from 1 to 255
-            {
-              StrAdd = DecToHex(k);
-              Serial.println("Scanning node : " + String(k)+ " with address :" + StrNet + StrSubnet + StrAdd);
-              TX_INV("",StrNet + StrSubnet + StrAdd + GetAddr);
-              PingReply = RX_INV(12);
-              if (PingReply.substring(14, 18) == "0095") {
-                TX_INV(StrNet + StrSubnet + StrAdd,"");
-                NodeInformation = RX_INV(41);
-                if (NodeInformation.substring(14, 18) == "1D93") {
-                  Serial.println("Inv Id#                            " + String(InvId));
-                  RS485_DstAddr = NodeInformation.substring(6, 10);
-                  Serial.println("Inv Addr#                          " + RS485_DstAddr);
-                  NodeProductNumber = "";
-                  NodeSerialNumber = "";
-                  for (size_t l = 0; l < 22; l = l + 2)
-                  {
-                    NodeProductNumber += String(char(HexToDec(NodeInformation.substring(18 + l ,20 + l))));
-                    NodeSerialNumber += String(char(HexToDec(NodeInformation.substring(42 + l ,44 + l))));
-                  }
-                  NodeProductNumber.replace(" ", "");
-                  Serial.println("ProductNumber#                          " + NodeProductNumber);
-                  NodeSerialNumber.replace(" ", "");
-                  Serial.println("SerialNumber#                          " + NodeSerialNumber);
-                  if (NodeProductNumber == "A0025051201") {
-                    _InverterList->push_back(new InverterConfigElement(InvId, "TLX", NodeProductNumber, NodeSerialNumber, RS485_DstAddr));
-                  } else {
-                    if (NodeProductNumber == "A0025008301") {
-                      _InverterList->push_back(new InverterConfigElement(InvId, "ULX", NodeProductNumber, NodeSerialNumber, RS485_DstAddr));
-                    } else {
-                      Serial.println("Unknown ProductNumber# Inverter will not be stored " + NodeProductNumber);
-                    }
-                  }
-                  InvId ++;
-                  if (InvId > MaxInvCount) {
-                    *Scanning = false;
-                    return;
-                  }
-                }
-              }
-              *ScanPerc += 0.0018;
-              vTaskDelay(10);
-            }
-          } else {
-            *ScanPerc += 0.4761;
-          }
-          vTaskDelay(10);
-        }
-      } else {
-        *ScanPerc += 7.1428;
-      }
-      vTaskDelay(10);
+    if (RX_INV(12) == "") {
+        Serial.println("Bus scanned without success no inverter found !");
+        *Scanning = false;
+        *ScanPerc = 100;
+        return;
     }
-  } else {
-    Serial.println("Bus scanned without success no inverter found !");
-  }
-  *Scanning = false;
-  *ScanPerc = 100;
+
+    for (size_t i = 1; i < 15; i++) { // slave networks are from 1 to 14
+        Serial.println("Scanning slave network : " + String(i));
+        StrNet = String(i, HEX);
+        TX_INV("", StrNet + "FFF" + GetAddr);
+
+        if (RX_INV(12) == "") {
+            *ScanPerc += 7.1428;
+            vTaskDelay(5);
+            continue;
+        }
+
+        for (size_t j = 0; j < 15; j++) { // Subnet are from 0 to 14
+            Serial.println("Scanning subnet : " + String(j));
+            StrSubnet = String(j, HEX);
+            TX_INV("", StrNet + StrSubnet + "FF" + GetAddr);
+
+            if (RX_INV(12) == "") {
+                *ScanPerc += 0.4761;
+                vTaskDelay(5);
+                continue;
+            }
+
+            for (size_t k = 0; k < 255; k++) { // nodes from 1 to 255
+                StrAdd = DecToHex(k);
+                Serial.println("Scanning node : " + String(k) + " with address :" + StrNet + StrSubnet + StrAdd);
+                TX_INV("", StrNet + StrSubnet + StrAdd + GetAddr);
+                PingReply = RX_INV(12);
+
+                if (PingReply.substring(14, 18) != "0095") {
+                    *ScanPerc += 0.0018;
+                    vTaskDelay(5);
+                    continue;
+                }
+
+                TX_INV(StrNet + StrSubnet + StrAdd, "");
+                NodeInformation = RX_INV(41);
+
+                if (NodeInformation.substring(14, 18) != "1D93") {
+                    *ScanPerc += 0.0018;
+                    vTaskDelay(5);
+                    continue;
+                }
+
+                Serial.println("Inv Id# " + String(InvId));
+                RS485_DstAddr = NodeInformation.substring(6, 10);
+                Serial.println("Inv Addr# " + RS485_DstAddr);
+
+                NodeProductNumber = "";
+                NodeSerialNumber = "";
+                for (size_t l = 0; l < 22; l += 2) {
+                    NodeProductNumber += String(char(HexToDec(NodeInformation.substring(18 + l, 20 + l))));
+                    NodeSerialNumber += String(char(HexToDec(NodeInformation.substring(42 + l, 44 + l))));
+                }
+
+                NodeProductNumber.replace(" ", "");
+                Serial.println("ProductNumber# " + NodeProductNumber);
+                NodeSerialNumber.replace(" ", "");
+                Serial.println("SerialNumber# " + NodeSerialNumber);
+
+                if (NodeProductNumber == "A0025051201") {
+                    _InverterList->push_back(new InverterConfigElement(InvId, "TLX", NodeProductNumber, NodeSerialNumber, RS485_DstAddr));
+                } else if (NodeProductNumber == "A0025008301") {
+                    _InverterList->push_back(new InverterConfigElement(InvId, "ULX", NodeProductNumber, NodeSerialNumber, RS485_DstAddr));
+                } else {
+                    Serial.println("Unknown ProductNumber# Inverter will not be stored " + NodeProductNumber);
+                }
+
+                InvId++;
+                if (InvId > MaxInvCount) {
+                    *Scanning = false;
+                    *ScanPerc = 100;
+                    return;
+                }
+
+                *ScanPerc += 0.0018;
+                vTaskDelay(5);
+            }
+
+            vTaskDelay(5);
+        }
+
+        vTaskDelay(5);
+    }
+
+    *Scanning = false;
+    *ScanPerc = 100;
 }
 
 void ComLynx::TX_INV(const String InvAddr, String TXLocal) 
@@ -212,19 +226,16 @@ unsigned int ComLynx::ChrHex2Asc(String *ChrString)
 String ComLynx::OutStuffing(String *ChrStrStuff) 
 {
   String Result = "";
-  String StrByte;
-  for (int x = 0; x < ChrStrStuff->length(); x = x + 2) {
-    StrByte = ChrStrStuff->substring(x, x + 2);
-    if (StrByte == "7E") {
-        Result += "7D5E";
+  for (int x = 0; x < ChrStrStuff->length(); x += 2) {
+      String StrByte = ChrStrStuff->substring(x, x + 2);
+      if (StrByte == "7E") {
+          Result += "7D5E";
+      } else if (StrByte == "7D") {
+          Result += "7D5D";
       } else {
-        if (StrByte == "7D") {
-          Result = Result + "7D5D";
-        } else {
-          Result = Result + StrByte;
-        }
+          Result += StrByte;
       }
-    }
+  }
   return Result;
 }
 

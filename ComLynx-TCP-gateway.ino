@@ -31,9 +31,10 @@
 #include <ArduinoOTA.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <MQTT.h>
-#include <RemoteDebug.h>
+//#include <RemoteDebug.h>
 #include <ESPAsyncWebServer.h>
 #include <vector>
 #include <ESPmDNS.h>
@@ -46,8 +47,8 @@
 #define HOSTNAME "CLX-GW"
 
 #define Program "ComLynx-TCP-gateway"
-#define Version "0.4"
-#define CodeDate "2025-01-10"
+#define Version "0.5"
+#define CodeDate "2025-01-19"
 String hostname(HOSTNAME);
 
 String SSID;
@@ -64,9 +65,10 @@ IPAddress Gateway;
 IPAddress Netmask;
 IPAddress primaryDNS;
 boolean MQTTOn;
+boolean MQTTTLS;
 boolean RestAPIOn;
 unsigned long ClxInterval;
-IPAddress MQTTIP;
+String MQTTBroker;
 unsigned int MQTTPort;
 String MQTTUser;
 String MQTTPwd;
@@ -96,9 +98,9 @@ std::vector<InverterConfigElement*> InverterMemList;
 
 AsyncWebServer* server;
 
-WiFiClient WifiMqttClient;
+WiFiClient* WifiMqttClient;
 MQTTClient MQTTClient;
-RemoteDebug Debug;
+//RemoteDebug Debug;
 
 void EstablishWifiConnect(void){
   if (SSID.length() > 0) {
@@ -194,7 +196,7 @@ void setup()
   // get wifi parameters
   Serial.println("connect Wifi");
   EstablishWifiConnect();
-  Debug.begin("Debug started");
+  //Debug.begin("Debug started");
 
   GetInvertersFromEprom(&InverterMemList);
   InitInverters(&mypInverterList, &InverterMemList);
@@ -210,12 +212,20 @@ void setup()
   ArduinoOTA.setHostname((const char *)hostname.c_str());
   ArduinoOTA.begin();  //Mandatory
 
-  MQTTClient.begin(WifiMqttClient);
-
-  if (MQTTOn && MQTTDiscOn) {
-    for(int i = 0; i < mypInverterList.size(); i++){
-      myComLynxInverter = mypInverterList.at(i);
-      MQTTDiscovery(myComLynxInverter);
+  if (MQTTOn ) {
+    if (!MQTTTLS) {
+      WifiMqttClient = new WiFiClient;
+    } else {
+      WifiMqttClient = new WiFiClientSecure;
+      WiFiClientSecure* secureClient = (WiFiClientSecure*)WifiMqttClient;
+      secureClient->setInsecure(); // Do not verify the server certificate Man in the middle attack will be possible
+    }
+    MQTTClient.begin(*WifiMqttClient);
+    if (MQTTDiscOn) {
+      for(int i = 0; i < mypInverterList.size(); i++){
+        myComLynxInverter = mypInverterList.at(i);
+        MQTTDiscovery(myComLynxInverter);
+      }
     }
   }
 
@@ -229,9 +239,8 @@ void loop()
   static unsigned long TimeTLX = millis();
   static unsigned long TimePrint = millis();
 
-  //server.handleClient();
   ArduinoOTA.handle();
-  Debug.handle();
+  //Debug.handle();
 
   // Wraparround every ~50 days;
   // Should not be necessary after change to unsigned long
