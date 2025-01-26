@@ -124,9 +124,9 @@ Enable MQTT and home assistant MQTT auto-discovery on this page :
 
 <img  alt="root page" src="/doc/Webpages/MQTT configuration page.png">
 
-View each configured inverter on this page :
+View each configured inverter on this page (by using inverter's id) :
 
-<img  alt="root page" src="/doc/Webpages/All inverter parameters page.png">
+<img  alt="root page" src="/doc/Webpages/All parameters Inverter page.png">
 
 # REST API:
 

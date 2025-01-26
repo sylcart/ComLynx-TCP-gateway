@@ -1272,9 +1272,8 @@ void HandleInverter(AsyncWebServerRequest *request)
           if (myInv->PrintSN().c_str()[0] != 0) {
             msg += "<tr><td>Serial Number</td><td>" + myInv->PrintSN() + "</td><td></td><td></td></tr>";
           }
-          if (myInv->PrintOpMode().c_str()[0] != 0) {
-            msg += "<tr><td>Operation mode</td><td>" + myInv->PrintOpMode() + "</td><td></td><td></td></tr>";
-          }
+          msg += "<tr><td>Name</td><td>" + myInv->PrintName() + "</td><td></td><td></td></tr>";
+          msg += "<tr><td>Operation mode</td><td>" + myInv->PrintOpMode() + "</td><td></td><td>OpModeTxt</td></tr>";
           for (int i = 0; i < myInv->PrintParametersCount(); i++) {
             msg += "<tr><td>" + myInv->PrintNameParameter(i) + "</td><td>" + myInv->PrintFormatedMeasParameter(i) + "</td><td>" + myInv->PrintUnitParameter(i) + "</td><td>" + myInv->PrintParNameParameter(i) + "</td></tr>";
           }
