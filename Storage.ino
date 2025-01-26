@@ -118,12 +118,9 @@ void GetInvertersFromEprom(std::vector<InverterConfigElement*> *_InverterCEList)
     if ((_InvType == "TLX" || _InvType == "ULX") && _InvProductNumber != "" && _InvSerialNumber != "" && _InvAddress != "") {
       String msg = "Inverter " + String(_InvId) + " restored from eeprom";
       Serial.println(msg);
-      //Debug.println(msg);
       _InverterCEList->push_back(new InverterConfigElement(_InvId, _InvType, _InvProductNumber, _InvSerialNumber, _InvAddress, _OptionByte));
     } else {
-      String msg = "Invalid inverters parameters preference will be cleared";
-      Serial.println(msg);
-      //Debug.println(msg);
+      Serial.println("Invalid inverters parameters preference will be cleared");
       preferences.clear();
     }
   }

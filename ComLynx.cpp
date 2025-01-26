@@ -2,6 +2,8 @@
     Name: ComLynx   
 */
 #include "ComLynx.h"
+#include <RemoteDebug.h>
+extern RemoteDebug Debug;
 
 ComLynx::ComLynx(const byte RXD, const byte TXD)
 {
@@ -63,7 +65,8 @@ String ComLynx::RX_INV(int RX_LENGTH) {
   RXData.replace("7D5E", "7E"); // remove byte stuffing
   RXData.replace("7D5D", "7D"); // remove byte stuffing
   if (RXData != "") {
-    Serial.print(">" + RXData + "<"); 
+    //Serial.println(">" + RXData + "<");
+    //Debug.println(">" + RXData + "<"); 
     String RXDataCRC = RXData.substring(2,RXData.length()-2);
     // Skip the first byte (2chars) Initially pFirstByte should point to the first byte to be included in the checksum calculation, 
     // which is the second byte in the message, the Address field (0xFF).
@@ -178,7 +181,6 @@ void ComLynx::DiscoverInverters(std::vector<InverterConfigElement*> *_InverterLi
 
         vTaskDelay(5);
     }
-
     *Scanning = false;
     *ScanPerc = 100;
 }
@@ -207,7 +209,6 @@ void ComLynx::TX_INV(const String InvAddr, String TXLocal)
   TXData = TXData + fcsout(DataAsc, ChrHex2Asc(&TXData));
   TXData.toUpperCase();
   TXData = RS485_StartStop + OutStuffing(&TXData) + RS485_StartStop;
-  Serial.println(TXData + " sent");
   for (x = 0; x < TXData.length(); x = x + 2) {
     Serial2.write(HexToDec(TXData.substring(x, x + 2)));
   }

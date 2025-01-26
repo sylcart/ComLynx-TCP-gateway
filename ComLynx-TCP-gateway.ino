@@ -25,7 +25,7 @@
 */ 
 
 #include "DanfossInverter.h" // Danfoss Inverter Class (TLX + ULX)
-#include "ComLynx.h" // comlynx RS485 Interface Class
+#include "ComLynx.h"         // comlynx RS485 Interface Class
 #include "InverterConfigElement.h"
 
 #include <ArduinoOTA.h>
@@ -34,7 +34,7 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <MQTT.h>
-//#include <RemoteDebug.h>
+#include <RemoteDebug.h>
 #include <ESPAsyncWebServer.h>
 #include <vector>
 #include <ESPmDNS.h>
@@ -47,8 +47,8 @@
 #define HOSTNAME "CLX-GW"
 
 #define Program "ComLynx-TCP-gateway"
-#define Version "0.5"
-#define CodeDate "2025-01-19"
+#define Version "0.6"
+#define CodeDate "2025-01-26"
 String hostname(HOSTNAME);
 
 String SSID;
@@ -100,7 +100,7 @@ AsyncWebServer* server;
 
 WiFiClient* WifiMqttClient;
 MQTTClient MQTTClient;
-//RemoteDebug Debug;
+RemoteDebug Debug;
 
 void EstablishWifiConnect(void){
   if (SSID.length() > 0) {
@@ -156,14 +156,12 @@ void InitInverters(std::vector<DanfossInverter*> *_InverterList,std::vector<Inve
 
 void setup()
 {
-  Serial.begin(115200) ;  // Debug console
+  Serial.begin(115200); // Serial console
   delay(800);
   Serial.println("Booting");
   Serial.println(String(Program) + " " + String(Version));
   Serial.println(String("Compile: ") + String(__DATE__) + " " + String(__TIME__));
   startMillis = millis();
-
-  // myInverter = new DanfossTLX(&MyComLynx, "0224");
 
   // Configure hostname
   // **************
@@ -196,7 +194,7 @@ void setup()
   // get wifi parameters
   Serial.println("connect Wifi");
   EstablishWifiConnect();
-  //Debug.begin("Debug started");
+  Debug.begin("Debug started");
 
   GetInvertersFromEprom(&InverterMemList);
   InitInverters(&mypInverterList, &InverterMemList);
@@ -228,19 +226,17 @@ void setup()
       }
     }
   }
-
   Serial.println("Boot successfull");
 }
 
 void loop()
 {
-  //const unsigned long  TIMETLX   = 800; // 36 par x 2 times a minute -> ~830ms each (Not to block server.handleClient();
   const unsigned long  TIMEPRINT = 60000;
   static unsigned long TimeTLX = millis();
   static unsigned long TimePrint = millis();
 
   ArduinoOTA.handle();
-  //Debug.handle();
+  Debug.handle();
 
   // Wraparround every ~50 days;
   // Should not be necessary after change to unsigned long
@@ -250,49 +246,16 @@ void loop()
  
   if (millis() - TimeTLX >  ClxInterval){
     for(int i = 0; i < mypInverterList.size(); i++){
-
-      // Get inverter from list
       myComLynxInverter = mypInverterList.at(i);
-
-      // Serial.print ("NumberOfParameters : ");
-      Serial.println (mypInverterList.at(i)->PrintParametersCount());
-      // //mypInverterList.at(i)->FakeGetStatus();
-      // Serial.print ("Type : ");
-      // Serial.println (mypInverterList.at(i)->PrintType());
-      // Serial.print ("SN : ");
-      // Serial.println (mypInverterList.at(i)->PrintSN());
-      // //mypInverterList.at(i)->GetName();
-      // Serial.print ("Name : ");
-      // Serial.println (mypInverterList.at(i)->PrintName());
-      // Serial.print ("Product Number : ");
-      // Serial.println (mypInverterList.at(i)->PrintProductNumber());
-      // Serial.print ("Operating Mode : ");
-      // Serial.println (mypInverterList.at(i)->PrintOpMode());
-      // Serial.print ("Parameter 1 name : ");
-      // Serial.println (mypInverterList.at(i)->PrintNameParameter(1));
-      // Serial.print ("Parameter 1 parname : ");
-      // Serial.println (mypInverterList.at(i)->PrintParNameParameter(1));
-      // Serial.print ("Parameter 1 unit : ");
-      // Serial.println (mypInverterList.at(i)->PrintUnitParameter(1));
-      // Serial.print ("Parameter 1 measure : ");
-      // Serial.println (mypInverterList.at(i)->PrintMeasParameter(1));
-      // Serial.print ("Parameter 1 formated measure : ");
-      // Serial.println (mypInverterList.at(i)->PrintFormatedMeasParameter(1));
-
-      //myComLynxInverter->GetRollingParameters();
       myComLynxInverter->GetAllParameters();
-      //myComLynxInverter->GetOneParameter("TotalE");
-      //myComLynxInverter->GetOneParameter("OpMode");
       if (MQTTOn) {
         SendMQTT(myComLynxInverter);
       }
-
     }
-    //myDanfossULX.PrintAll();
     TimeTLX = millis();
   }
+
   if (millis() - TimePrint >  TIMEPRINT){
-    //myDanfossULX.PrintAll();
     TimePrint = millis();
   }
   

@@ -32,10 +32,10 @@ class DanfossInverter {
     String PrintFormatedMeasParameter(int index);
 
   protected:
-    String RS485_Addr      = "FFFF";  // Inverter Adress - as reported by findaddr
-    String SourceModuleID  = "D0";    // Source Module ID
-    String DefaultModuleID = "00";    // default Module ID to get status, serial ...
-    String NameModuleID    = "00";    // Module ID to get name
+    String RS485_Addr      = "FFFF"; // Inverter Adress - as reported by findaddr
+    String SourceModuleID  = "D0";   // Source Module ID
+    String DefaultModuleID = "00";   // default Module ID to get status, serial ...
+    String StatusModuleID  = "00";   // Module ID to get name
     ComLynx *_ComlynxInv;
 
     std::vector<String> INV_modes_txt;

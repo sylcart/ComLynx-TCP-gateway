@@ -1,6 +1,6 @@
 # Comlynx TCP gateway
 
-Revision 0.4
+Revision 0.6
 
 This program is a gateway beetween Dansfoss Inverters (TLX and ULX) and TCP networks.
   It use the Danfoss comlynx protocol (over RS485) to query the inverters parameters.

@@ -4,6 +4,8 @@
 
 #include "DanfossInverter.h"
 #include <vector>
+#include <RemoteDebug.h>
+extern RemoteDebug Debug;
 
 DanfossInverter::DanfossInverter(ComLynx *ComlynxInv, const String ComlynxAddr, String *InvSN, String *InvPN)
 {
@@ -16,47 +18,44 @@ DanfossInverter::DanfossInverter(ComLynx *ComlynxInv, const String ComlynxAddr, 
 void DanfossInverter::GetStatus(void)
 {
   String GetParam;
-  String _SerialNumber;
-  String _ProductNumber;
+  String _SerialNumber = "";
+  String _ProductNumber = "";
 
   // Serial Number
   for (int j=3;j > 0; j--) {
-    GetParam = DefaultModuleID + SourceModuleID + "460" + String(j);
-    _SerialNumber = _ComlynxInv->GetInvString(RS485_Addr, GetParam);
+    GetParam = StatusModuleID + SourceModuleID + "460" + String(j);
+    _SerialNumber = _SerialNumber + _ComlynxInv->GetInvString(RS485_Addr, GetParam);
   }
   _SerialNumber.replace(" ", "");
   if (_SerialNumber != "") {this->SerialNumber = _SerialNumber;} 
-  Serial.println("Serial#                                 " + _SerialNumber);
   
   // Product Number
   for (int j=3;j > 0; j--) {
-    GetParam = DefaultModuleID + SourceModuleID + "3C0" + String(j);
-    _ProductNumber = _ComlynxInv->GetInvString(RS485_Addr, GetParam);
+    GetParam = StatusModuleID + SourceModuleID + "3C0" + String(j);
+    _ProductNumber = _ProductNumber + _ComlynxInv->GetInvString(RS485_Addr, GetParam);
   }
   _ProductNumber.replace(" ", "");
   if (_ProductNumber != "") {this->ProductNumber = _ProductNumber;} 
-  Serial.println("Product#                                " + _ProductNumber);
 }
 
 void DanfossInverter::GetName(void)
 {
   String RXData;
   String GetParam;
-  String _InverterName;
+  String _InverterName = "";
 
   for (int j=7;j > 3; j--) {
-    GetParam = NameModuleID + SourceModuleID + "3C6" + String(j);
-    _InverterName = _ComlynxInv->GetInvString(RS485_Addr, GetParam);
+    GetParam = StatusModuleID + SourceModuleID + "3C6" + String(j);
+    _InverterName = _InverterName + _ComlynxInv->GetInvString(RS485_Addr, GetParam);
   }
   _InverterName.replace(" ", "");
   if (_InverterName != "") {this->Name = _InverterName;} 
-  Serial.println("Inverter Name#                          " + _InverterName);
 }
 
 void DanfossInverter::SetSN(String *_SerialNumber)
 {
   this->SerialNumber = *_SerialNumber;
-  Serial.println("Inverter SN#                          " + SerialNumber);
+  Serial.println("Inverter SN# " + SerialNumber);
 }
 
 String DanfossInverter::PrintType(void)
@@ -80,7 +79,7 @@ String DanfossInverter::PrintOpMode(void){
   return OpModeTxt;
 }
 
-void DanfossInverter::GetRollingParameters(void){ // don't know if thi is usefull
+void DanfossInverter::GetRollingParameters(void){ // don't know if this is usefull
   GetOneParameter(ParamIndex);
   ParamIndex++;
   if(ParamIndex >= InvParamList.NbParam){
@@ -111,6 +110,7 @@ void DanfossInverter::GetOneParameter(int i) {
     Serial.println(InvParamList.ParName[i] + " Raw Not Valid");
     return;
   }
+  InvParamList.Raw[i] = TmpRaw;
 
   if (InvParamList.ParName[i] == "OpMode") {
     int Inv_pw_mode = NbINV_power_modes;
@@ -129,12 +129,12 @@ void DanfossInverter::GetOneParameter(int i) {
         case 6: Inv_pw_mode = 3; break;
       }
     }
+    InvParamList.Meas[i] = InvParamList.Raw[i];
     OpModeTxt = (Inv_pw_mode < NbINV_power_modes) ? INV_modes_txt[Inv_pw_mode] : "Mode not known";
   } else {
-    InvParamList.Raw[i] = TmpRaw;
     InvParamList.Meas[i] = float(InvParamList.Raw[i]) / InvParamList.Conv[i];
-    Serial.println(String(InvParamList.ParName[i]) + " (Raw) : " + String(InvParamList.Raw[i]));
-    Serial.println(String(InvParamList.ParName[i]) + " : " + String(InvParamList.Meas[i]));
+    //Serial.println(String(InvParamList.ParName[i]) + " (Raw) : " + String(InvParamList.Raw[i]));
+    //Serial.println(String(InvParamList.ParName[i]) + " : " + String(InvParamList.Meas[i]));
   }
 }
 
@@ -176,8 +176,8 @@ DanfossTLX::DanfossTLX(ComLynx *ComlynxInv, const String ComlynxAddr, String *In
   InvParamList.NbParam = 41;
 
   Type = "TLX";
-  DefaultModuleID = "08";    // default Module ID to get status, serial ...
-  NameModuleID    = "08";    // Module ID to get name
+  DefaultModuleID = "08"; // default Module ID to get status, serial ...
+  StatusModuleID  = "08"; // Module ID to get name
 
   NbINV_power_modes = 6;
   INV_modes_txt = {
@@ -193,7 +193,7 @@ DanfossTLX::DanfossTLX(ComLynx *ComlynxInv, const String ComlynxAddr, String *In
   InvParamList.Name =    { "Total Energy Production","PV Voltage, input 1", "PV Voltage, input 2", "PV Voltage, input 3", "PV Current, input 1", "PV Current, input 2", "PV Current, input 3", "PV Power input 1", "PV Power input 2", "PV Power input 3", "PV Energy, input 1", "PV Energy, input 2", "PV Energy, input 3", "Grid voltage, L1", "Grid voltage, L2", "Grid voltage, L3", "Grid voltage, L1 (10min)", "Grid voltage, L2 (10min)", "Grid voltage, L3 (10min)", "Grid voltage, L1 – L2", "Grid voltage, L2 – L3", "Grid voltage, L3 – L1", "Grid current, L1", "Grid current, L2", "Grid current, L3", "Grid power, L1", "Grid power, L2", "Grid power, L3", "Grid power",  "Grid Energy Today, L1 ", "Grid Energy Today, L2", "Grid Energy Today, L3", "Grid Energy Today", "Grid current, DC L1", "Grid current, DC L2", "Grid current, DC L3", "Grid frequency, L1", "Grid frequency, L2", "Grid frequency, L3", "Grid frequency, AVG", "Operating Mode"};
   InvParamList.Cmd =     { "0102",                   "0228",                "0229",                "022A",                "022D",                "022E",                "022F",                "0232",             "0233",             "0234",             "0237",               "0238",               "0239",               "023C",             "023D",             "023E",             "025B",                     "025C",                     "025D",                     "025E",                  "025F",                  "0260",                  "023F",             "0240",             "0241",             "0242",           "0243",           "0244",           "0246",        "0247",                   "0248",                  "0249",                  "024A",              "024C",                "024D",                "024E",                "0261",               "0262",               "0263",               "0250",                "0A02" };
   InvParamList.Module =  { "08",                     "08",                  "08",                  "08",                  "08",                  "08",                  "08",                  "08",               "08",               "08",               "08",                 "08",                 "08",                 "08",               "08",               "08",               "08",                       "08",                       "08",                       "08",                    "08",                    "08",                    "08",               "08",               "08",               "08",             "08",             "08",             "08",          "08",                     "08",                    "08",                    "08",                "08",                  "08",                  "08",                  "08",                 "08",                 "08",                 "08",                  "08" };
-  InvParamList.Conv =    { 1000.0f,                  10.0f,                 10.0f,                 10.0f,                 1000.0f,               1000.0f,               1000.0f,               1000.0f,            1000.0f,            1000.0f,            1000.0f,              1000.0f,              1000.0f,              10.0f,              10.0f,              10.0f,              10.0f,                      10.0f,                      10.0f,                      10.0f,                   10.0f,                   10.0f,                   1000.0f,            1000.0f,            1000.0f,            1.0f,             1.0f,             1.0f,             1.0f,          1000.0f,                  1000.0f,                 1000.0f,                 1000.0f,             1.0f,                  1.0f,                  1.0f,                  1000.0f,              1000.0f,              1000.0f,              1000.0f,               1.0f };
+  InvParamList.Conv =    { 1000.0f,                  10.0f,                 10.0f,                 10.0f,                 1000.0f,               1000.0f,               1000.0f,               1.0f,               1.0f,               1.0f,               1000.0f,              1000.0f,              1000.0f,              10.0f,              10.0f,              10.0f,              10.0f,                      10.0f,                      10.0f,                      10.0f,                   10.0f,                   10.0f,                   1000.0f,            1000.0f,            1000.0f,            1.0f,             1.0f,             1.0f,             1.0f,          1000.0f,                  1000.0f,                 1000.0f,                 1000.0f,             1.0f,                  1.0f,                  1.0f,                  1000.0f,              1000.0f,              1000.0f,              1000.0f,               1.0f };
   InvParamList.Unit =    { "kWh",                    "V",                   "V",                   "V",                   "A",                   "A",                   "A",                   "W",                "W",                "W",                "kWh",                "kWh",                "kWh",                "V",                "V",                "V",                "V",                        "V",                        "V",                        "V",                     "V",                     "V",                     "A",                "A",                "A",                "W",              "W",              "W",              "W",           "kWh",                    "kWh",                   "kWh",                   "kWh",               "mA",                  "mA",                  "mA",                  "Hz",                 "Hz",                 "Hz",                 "Hz",                  "" };
 
   if (OptionByte != nullptr) {
@@ -270,7 +270,6 @@ DanfossTLX::DanfossTLX(ComLynx *ComlynxInv, const String ComlynxAddr, String *In
       InvParamList.Unit.insert(InvParamList.Unit.begin() + 1, "kWh");
     }
   }
-
   InvParamList.Meas.resize(InvParamList.NbParam, 0.0f);
   InvParamList.Raw.resize(InvParamList.NbParam, 0);
 
@@ -283,22 +282,22 @@ DanfossULX::DanfossULX(ComLynx *ComlynxInv, const String ComlynxAddr, String *In
   InvParamList.NbParam = 14;
 
   Type = "ULX";
-  DefaultModuleID = "0D";    // default Module ID to get status, serial ...
-  NameModuleID    = "04";    // Module ID to get name
+  DefaultModuleID   = "0D";  // default Module ID to get paramareters ...
+  StatusModuleID    = "04";  // Module ID to get name, serial and product number (unlike the danfoss comlynx user manual the module to query for the serial number is 04 not 13 (0D) )
   NbINV_power_modes = 4;
 
   INV_modes_txt = {
-    "OFF             ", // The inverter is off
-    "STANDBY         ", // There is insufficient irradiation to begin the grid connection process.
-    "Connecting      ", // The inverter is monitoring the grid, preparing to connect.
-    "Grid            " }; // The inverter is connected to grid and is producing energy.
+    "OFF       ", // The inverter is off
+    "STANDBY   ", // There is insufficient irradiation to begin the grid connection process.
+    "Connecting", // The inverter is monitoring the grid, preparing to connect.
+    "Grid      " }; // The inverter is connected to grid and is producing energy.
 
   InvParamList.ParName = { "InstantP",      "TotalE",                 "ProdTday",                "InstantE",                  "GridV",        "GridA",        "HZ",             "PvV1",                "PvV2",                "PvV3",                "PvA1",                "PvA2",                "PvA3",                "OpMode" };
   InvParamList.Name =    { "Instant Power", "Total Energy Production","Energy Production Today", "Instant Energy Production", "Grid voltage", "Grid current", "Grid frequency", "PV Voltage, input 1", "PV Voltage, input 2", "PV Voltage, input 3", "PV Current, input 1", "PV Current, input 2", "PV Current, input 3", "Operating Mode"};
   InvParamList.Cmd =     { "0101",          "0102",                   "0104",                    "0201",                      "0214",         "0215",         "0216",           "0228",                "0229",                "022A",                "022D",                "022E",                "022F",                "0A02" };
   InvParamList.Module =  { "04",            "04",                     "04",                      "0D",                        "0D",           "0D",           "0D",             "0D",                  "0D",                  "0D",                  "0D",                  "0D",                  "0D",                  "04" };
-  InvParamList.Conv =    { 1000.0f,         1000.0f,                  1000.0f,                   1000.0f,                     10.0f,          1000.0f,        1000.0f,          10.0f,                 10.0f,                 10.0f,                 1000.0f,               1000.0f,               1000.0f,               1.0f};
-  InvParamList.Unit =    { "W",             "kWh",                    "kWh",                     "W",                         "V",            "A",            "Hz",             "V",                   "V",                   "V",                   "A",                   "A",                   "A",                   ""};
+  InvParamList.Conv =    { 1.0f,            1000.0f,                  1000.0f,                   1.0f,                        1.0f,           1.0f,           100.0f,           10.0f,                 10.0f,                 10.0f,                 1.0f,                  1.0f,                  1.0f,                  1.0f};
+  InvParamList.Unit =    { "W",             "kWh",                    "kWh",                     "W",                         "V",            "mA",            "Hz",             "V",                   "V",                   "V",                  "mA",                  "mA",                  "mA",                   ""};
   
   InvParamList.Meas.resize(InvParamList.NbParam, 0.0f);
   InvParamList.Raw.resize(InvParamList.NbParam, 0);
